@@ -5,7 +5,7 @@
 
 template<class T>
 BTree<T>::BTree() {
-	this->rootId = 67650; //Store in metadata
+	this->rootId = 1; //Store in metadata
 
 	auto blockCount = data.GetBlockCount();
 	this->nextBlockId = blockCount + 1;

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <fstream>
+#include <Windows.h>
 
-constexpr int BLOCK_SIZE = 504; //TODO check padding
+constexpr int BLOCK_SIZE = 512; //Must be multiple of sizeof(T)
 
 class Data
 {
@@ -13,6 +14,7 @@ public:
 	void SaveBlock(int blockId, void* data);
 	void ReadBlock(int blockId, void* dataOut);
 private:
+	HANDLE hFile;
 	std::fstream file;
 };
 

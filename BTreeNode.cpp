@@ -67,10 +67,10 @@ void BTreeNode<T>::loadFromArray(Key<T> values[]) {
 
 template<class T>
 std::unique_ptr<BTreeNode<T>> BTreeNode<T>::split() {
-	std::unique_ptr<BTreeNode<T>> rightBlock = std::unique_ptr<BTreeNode<T>>(new BTreeNode<T>((BLOCK_VALUES_COUNT / 2) + 1));
+	std::unique_ptr<BTreeNode<T>> rightBlock = std::unique_ptr<BTreeNode<T>>(new BTreeNode<T>((BLOCK_VALUES_COUNT / 2) + 1 + (BLOCK_VALUES_COUNT % 2)));
 	Key<T>* middleValPtr = this->data.data() + (BLOCK_VALUES_COUNT / 2) + 1;
 
-	for (int i = 0; i <= BLOCK_VALUES_COUNT / 2; i++) {
+	for (int i = 0; i <= (BLOCK_VALUES_COUNT / 2) + (BLOCK_VALUES_COUNT % 2); i++) {
 		(*rightBlock)[i] = middleValPtr[i];
 	}
 
