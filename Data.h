@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-constexpr int BLOCK_SIZE = 24; //TODO check padding
+constexpr int BLOCK_SIZE = 504; //TODO check padding
 
 class Data
 {

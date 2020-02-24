@@ -4,7 +4,7 @@ Data::Data() {
 	file.open("data.bin", std::ios::out | std::ios::app);
 	file.close();
 	file.open("data.bin", std::ios::binary | std::ios::in | std::ios::out);
-	
+
 	if (GetBlockCount() == 0) {
 		int emptyBlock[BLOCK_SIZE / sizeof(int)];
 		for (int i = 0; i < BLOCK_SIZE / sizeof(int); i++) {

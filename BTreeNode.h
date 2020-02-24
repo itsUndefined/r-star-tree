@@ -32,7 +32,7 @@ public:
 	void loadFromArray(Key<T> values[]);
 	int count() { return (int) this->data.size(); }
 	std::unique_ptr<BTreeNode<T>> split();
-	void* getRawData();
+	std::unique_ptr<Key<T>[]> getRawData();
 
 	static constexpr int BLOCK_VALUES_COUNT = (BLOCK_SIZE / sizeof(Key<T>)) - 1;
 

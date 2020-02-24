@@ -12,12 +12,12 @@ public:
 	BTree();
 	void search(T val);
 	void insert(T val);
-
+	int rootId;
 private:
 	Data data;
 
 	std::unique_ptr<BTreeNode<T>> loadBlock(int blockId);
-	int height;
+	
 	int nextBlockId;
 	std::shared_ptr<BTreeNode<T>> root;
 };
