@@ -4,12 +4,14 @@
 
 int main() {
 
-	BTree<int> tree;
+	/*BTree<int> tree;
 	
 	for (int i = 1; i < 10000000; i++) {
 			tree.search(i);
 	}
 
-	std::cout << tree.rootId << std::endl;
+	std::cout << tree.rootId << std::endl;*/
+
+
 	return 0; 
 }
