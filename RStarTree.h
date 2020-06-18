@@ -1,8 +1,9 @@
 #pragma once
 
+struct Node;
+
 struct Rectangular
 {
-	//TODO: min-max coordinates of current rectangular
 	Node* child;
 };
 

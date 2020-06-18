@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "Data.h"
+#include "File.h"
 #include "BTreeNode.h"
 
 template<class T> 
@@ -14,7 +14,7 @@ public:
 	void insert(T val);
 	int rootId;
 private:
-	Data data;
+	File data;
 
 	std::unique_ptr<BTreeNode<T>> loadBlock(int blockId);
 	

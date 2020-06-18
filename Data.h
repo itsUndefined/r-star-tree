@@ -1,20 +1,20 @@
 #pragma once
 
-#include <fstream>
-#include <Windows.h>
+#include "File.h"
 
-constexpr int BLOCK_SIZE = 512; //Must be multiple of sizeof(T)
+
+enum class ColumnType {
+	INTEGER = 0,
+	FLOAT = 1,
+	CHAR = 2 // Uses next 2 bytes for CHAR length. For example 02 0F 00 For CHAR(15)
+};
 
 class Data
 {
-public:
 	Data();
-	~Data();
-	int GetBlockCount();
-	void SaveBlock(int blockId, void* data);
-	void ReadBlock(int blockId, void* dataOut);
+
+
 private:
-	HANDLE hFile;
-	std::fstream file;
+	File data;
 };
 

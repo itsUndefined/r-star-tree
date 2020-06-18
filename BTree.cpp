@@ -4,7 +4,7 @@
 #include <cmath>
 
 template<class T>
-BTree<T>::BTree() {
+BTree<T>::BTree(): data(L"btree.bin") {
 	this->rootId = 1; //Store in metadata
 
 	auto blockCount = data.GetBlockCount();
@@ -26,7 +26,6 @@ void BTree<T>::search(T val) { // Calling search on a completely empty BTree wil
 			return;//return key.key; // found
 		}
 		if (key.leftBlockPtr == INT_MAX) {
-			std::cout << "DAMAGE";
 			return;//not found
 		}
 		loadedBlock = this->loadBlock(key.leftBlockPtr);
