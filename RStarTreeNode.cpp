@@ -3,30 +3,40 @@
 
 using namespace RStar;
 
-RStarTreeNode::RStarTreeNode(int dimensions) {
-	this->leaf = true;
+RStarTreeNode::RStarTreeNode(int dimensions, int leaf) {
+	this->leaf = leaf;
 	this->dimensions = dimensions;
 }
 
 
-RStarTreeNode::RStarTreeNode(int size, int dimensions): RStarTreeNode(dimensions) {
+RStarTreeNode::RStarTreeNode(int size, int dimensions, int leaf): RStarTreeNode(dimensions, leaf) {
 	this->data.resize(size);
 }
 
-RStarTreeNode::RStarTreeNode(char* diskData, int dimensions): RStarTreeNode(dimensions) {
+RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf): RStarTreeNode(dimensions, leaf) {
 	for (int i = 0; i < BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1; i++) {
 		int* min = (int*)(diskData + i * Key<int>::GetKeySize(dimensions));
 		if (min[0] == INT_MAX) {
 			break;
 		}
-		int* max = (int*)(diskData + i * Key<int>::GetKeySize(dimensions) + dimensions * sizeof(int));
 		int leftBlockPtr = (int)*(diskData + i * Key<int>::GetKeySize(dimensions) + 2 * dimensions * sizeof(int));
-		this->data.push_back(Key<int>(
-			min,
-			max,
-			leftBlockPtr,
-			dimensions
-		));
+		if (!leaf) {
+			int* max = (int*)(diskData + i * Key<int>::GetKeySize(dimensions) + dimensions * sizeof(int));
+			this->data.push_back(Key<int>(
+				min,
+				max,
+				leftBlockPtr,
+				dimensions
+			));
+		} else {
+			this->data.push_back(Key<int>(
+				min,
+				leftBlockPtr,
+				dimensions
+			));
+		}
+		
+		
 	}
 
 	/*

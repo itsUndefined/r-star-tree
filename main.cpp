@@ -23,6 +23,8 @@ int main() {
 
 	RStarTree tree(1);
 
+	tree.search(new int[1]{ 0 }, new int[1]{ 20 });
 
-	return 0; 
+
+	return 0;
 }

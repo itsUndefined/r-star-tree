@@ -105,9 +105,9 @@ namespace RStar {
 	class RStarTreeNode
 	{
 	public:
-		RStarTreeNode(int dimensions);
-		RStarTreeNode(int size, int dimensions);
-		RStarTreeNode(char* diskData, int dimensions);
+		RStarTreeNode(int dimensions, int leaf);
+		RStarTreeNode(int size, int dimensions, int leaf);
+		RStarTreeNode(char* diskData, int dimensions, int leaf);
 		void insert(int* val);
 		bool isLeaf();
 

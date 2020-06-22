@@ -37,6 +37,7 @@ void RStarTree::search(int* min, int* max, std::shared_ptr<RStarTreeNode> block)
 			for (int i = 0; i < dimensions; i++) {
 				if (min[i] < point.min[i] && max[i] > point.min[i]) {
 					// Print point to output
+					int i = 1;
 				}
 			}
 		}
@@ -60,13 +61,9 @@ std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {
 	char* loadedData = new char[BLOCK_SIZE];
 	data.ReadBlock(blockId, loadedData);
 
-	if (loadedData[0] == 0) { // Not Leaf
-		
-	} else { // Leaf
-
-	}
+	bool leaf = *(int*)loadedData == 1;
 	
-	auto ptr =  std::unique_ptr<RStarTreeNode>(new RStarTreeNode(loadedData + 4, dimensions));
+	auto ptr = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(loadedData + 4, dimensions, leaf));
 	delete[] loadedData;
 	return ptr;
 }
