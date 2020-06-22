@@ -54,15 +54,7 @@ void BTreeNode<T>::loadFromArray(Key<T> values[]) {
 			break;
 		}
 	}
-	this->data.assign(values, values + i + 1);
-	/*for (int i = 0; i < BLOCK_VALUES_COUNT + 1; i++) {
-		this->data.push_back(values[i]); // TODO PERFORMANCE IMPLICATIONS?
-		if (values[i].key == INT_MAX) {
-			return;
-		}
-	}*/
-	//this->data.assign(values, values + BLOCK_VALUES_COUNT);
-	
+	this->data.assign(values, values + i + 1);	
 }
 
 template<class T>

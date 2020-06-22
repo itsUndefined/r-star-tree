@@ -64,5 +64,14 @@
     <None Include="data.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="data_metadata.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="rtree.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="rtree_metadata.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

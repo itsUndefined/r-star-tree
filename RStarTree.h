@@ -1,30 +1,30 @@
 #pragma once
 
-struct Node;
+#include <memory>
 
-struct Rectangular
-{
-	Node* child;
-};
 
-struct Node
-{
-	bool isLeaf;
-	Rectangular rectangular;
-};
+#include "File.h"
+#include "RStarTreeNode.h"
 
-// the nodes in a block, it will be an array
-struct ListNode
-{
-	Node* node;
-	ListNode* next;
-};
+using namespace RStar;
+
 
 class RStarTree
 {
 public:
-	RStarTree();
-	void search();
-	void insert();
+	RStarTree(int dimensions);
+	void search(int* min, int* max);
+	void insert(int* val);
+
+private:
+	void search(int* min, int* max, std::shared_ptr<RStarTreeNode> block);
+	std::unique_ptr<RStarTreeNode> loadBlock(int blockId);
+
+	File data;
+	int rootId;
+	int dimensions;
+
+	std::shared_ptr<RStarTreeNode> root;
 };
+
 

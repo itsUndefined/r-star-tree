@@ -14,12 +14,11 @@ File::File(std::wstring filename) {
 		exit(1);
 	}
 
-	if (GetBlockCount() == 0) {
+	if (GetBlockCount() == 0) { // Initialize if empty
 		int emptyBlock[BLOCK_SIZE / sizeof(int)];
 		for (int i = 0; i < BLOCK_SIZE / sizeof(int); i++) {
 			emptyBlock[i] = INT_MAX;
 		}
-		
 		SaveBlock(1, emptyBlock);
 	}
 }

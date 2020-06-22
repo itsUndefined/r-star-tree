@@ -1,6 +1,9 @@
 #include "BTree.h"
 #include <iostream>
 
+#include "Data.h"
+#include "RStarTree.h"
+
 
 int main() {
 
@@ -11,6 +14,14 @@ int main() {
 	}
 
 	std::cout << tree.rootId << std::endl;*/
+
+	//Data data;
+
+	//data.InsertRow(std::unique_ptr<char>(new char[512]{ 'h', 'e', 'l', 'l', 'o', '\0', 'p', 10, 0, 0, 0 }));
+	//data.PrintData();
+
+
+	RStarTree tree(1);
 
 
 	return 0; 

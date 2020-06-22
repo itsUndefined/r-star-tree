@@ -170,6 +170,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="data.bin" />
+    <None Include="data_metadata.bin" />
+    <None Include="rtree.bin" />
+    <None Include="rtree_metadata.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

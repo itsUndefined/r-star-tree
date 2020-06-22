@@ -11,9 +11,7 @@ BTree<T>::BTree(): data(L"btree.bin") {
 	this->nextBlockId = blockCount + 1;
 	//this->height = (int) ceil(log2((BTreeNode<T>::BLOCK_VALUES_COUNT * blockCount) + 1) / log2(BTreeNode<T>::BLOCK_VALUES_COUNT + 1)) - 1;
 
-	Key<T> loadedData[BTreeNode<T>::BLOCK_VALUES_COUNT + 1];
-	data.ReadBlock(this->rootId, loadedData);
-	this->root = std::shared_ptr<BTreeNode<T>>(new BTreeNode<T>(loadedData));
+	this->root = this->loadBlock(this->rootId);
 }
 
 
