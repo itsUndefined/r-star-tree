@@ -1,4 +1,5 @@
 #include "File.h"
+
 #include <fileapi.h>
 
 File::File(std::wstring filename) {

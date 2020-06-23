@@ -1,6 +1,7 @@
 #include "RStarTree.h"
 
 #include <fstream>
+#include <queue>
 
 using namespace RStar;
 
@@ -47,14 +48,22 @@ void RStarTree::search(int* min, int* max, std::shared_ptr<RStarTreeNode> block)
 
 	for (auto& key : *block) {
 		if (key.overlaps(min, max)) {
-			this->search(min, max, this->loadBlock(key.leftBlockPtr));
+			this->search(min, max, this->loadBlock(key.blockPtr));
 		}
 	}
 }
 
 void RStarTree::insert(int* val) {
-	this->root->insert(val);
-	data.SaveBlock(this->rootId, this->root->getRawData().get());
+	//this->root->insert(val);
+	//data.SaveBlock(this->rootId, this->root->getRawData().get());
+	auto node = chooseLeaf(val);
+	if (!node->isFull()) {
+		node->insert(val);
+		data.SaveBlock(node->getBlockId(), node->getRawData().get());
+	} else {
+
+	}
+
 }
 
 std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {
@@ -63,7 +72,62 @@ std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {
 
 	bool leaf = *(int*)loadedData == 1;
 	
-	auto ptr = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(loadedData + 4, dimensions, leaf));
+	auto ptr = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(loadedData + 4, dimensions, leaf, blockId));
 	delete[] loadedData;
 	return ptr;
+}
+
+std::shared_ptr<RStarTreeNode> RStarTree::chooseLeaf(int* val) {
+	auto N = this->root;
+
+	while (true) {
+		if (N->isLeaf()) {
+			return N;
+		}
+
+		auto child = loadBlock(N->begin()->blockPtr);
+
+		int minimum = INT_MAX;
+		Key<int>* chosenKey = nullptr;
+
+		if (child->isLeaf()) {
+			std::priority_queue<std::pair<int, Key<int>*>, std::vector<std::pair<int, Key<int>*>>, std::greater<std::pair<int, Key<int>*>>> pq;
+			for (auto& node : *N) {
+				pq.push(std::make_pair(node.areaEnlargementRequiredToFit(val), &node));
+			}
+
+			for (int i = 0; i < 32; i++) {
+				auto& A = *pq.top().second;
+				pq.pop();
+				double beforeEnlargementOverlap = N->overlap(A);
+				auto enlargedKey = A.getEnlargedToFit(val);
+				double afterEnlargementOverlap = N->overlap(*enlargedKey);
+				auto overlapEnlargement = afterEnlargementOverlap - beforeEnlargementOverlap;
+				if (overlapEnlargement == minimum) {
+					throw "We NEED to resolve TIES!!!!";
+				}
+				if (overlapEnlargement < minimum) {
+					minimum = overlapEnlargement;
+					chosenKey = &A;
+				}
+			}	
+		}
+
+		if (!child->isLeaf()) {
+			for (auto& node : *N) {
+				auto areaEnlargmentRequired = node.areaEnlargementRequiredToFit(val);
+				if (areaEnlargmentRequired == minimum) {
+					throw "We NEED to resolve TIES!!!!";
+				}
+				if (areaEnlargmentRequired < minimum) {
+					minimum = areaEnlargmentRequired;
+					chosenKey = &node;
+				}
+			}
+		}
+
+		N = this->loadBlock(chosenKey->blockPtr);
+		continue;
+	}
+
 }

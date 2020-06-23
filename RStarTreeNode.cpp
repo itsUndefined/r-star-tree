@@ -3,17 +3,18 @@
 
 using namespace RStar;
 
-RStarTreeNode::RStarTreeNode(int dimensions, int leaf) {
+RStarTreeNode::RStarTreeNode(int dimensions, int leaf, int blockId) {
 	this->leaf = leaf;
 	this->dimensions = dimensions;
+	this->blockId = blockId;
 }
 
 
-RStarTreeNode::RStarTreeNode(int size, int dimensions, int leaf): RStarTreeNode(dimensions, leaf) {
+RStarTreeNode::RStarTreeNode(int size, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
 	this->data.resize(size);
 }
 
-RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf): RStarTreeNode(dimensions, leaf) {
+RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
 	for (int i = 0; i < BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1; i++) {
 		int* min = (int*)(diskData + i * Key<int>::GetKeySize(dimensions));
 		if (min[0] == INT_MAX) {
@@ -35,8 +36,6 @@ RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf): RStarTre
 				dimensions
 			));
 		}
-		
-		
 	}
 
 	/*
@@ -54,8 +53,23 @@ void RStarTreeNode::insert(int* val) {
 	this->data.push_back(Key<int>(val, 69, this->dimensions));
 }
 
+double RStar::RStarTreeNode::overlap(Key<int>& key) {
+	double overlapArea = 0.0;
+	for (auto& node : *this) {
+		if (node.blockPtr == key.blockPtr) {
+			continue;
+		}
+		overlapArea += key.intersectArea(node.min, node.max);
+	}
+	return overlapArea;
+}
+
 bool RStarTreeNode::isLeaf() {
 	return this->leaf;
+}
+
+bool RStarTreeNode::isFull() {
+	return this->data.size() == BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
 }
 
 std::unique_ptr<char[]> RStarTreeNode::getRawData() {
@@ -71,7 +85,7 @@ std::unique_ptr<char[]> RStarTreeNode::getRawData() {
 			std::copy(it->max, it->max + dimensions, dataPtr);
 		}
 		dataPtr += dimensions;
-		*dataPtr = it->leftBlockPtr;
+		*dataPtr = it->blockPtr;
 		dataPtr += 1;
 	}
 	*dataPtr = INT_MAX;

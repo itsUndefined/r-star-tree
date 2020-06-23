@@ -1,10 +1,8 @@
 #pragma once
 
-#include <memory>
-
-
-#include "File.h"
 #include "RStarTreeNode.h"
+#include <memory>
+#include "File.h"
 
 using namespace RStar;
 
@@ -19,6 +17,7 @@ public:
 private:
 	void search(int* min, int* max, std::shared_ptr<RStarTreeNode> block);
 	std::unique_ptr<RStarTreeNode> loadBlock(int blockId);
+	std::shared_ptr<RStarTreeNode> chooseLeaf(int* val);
 
 	File data;
 	int rootId;
