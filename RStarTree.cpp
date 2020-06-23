@@ -53,7 +53,12 @@ void RStarTree::search(int* min, int* max, std::shared_ptr<RStarTreeNode> block)
 	}
 }
 
-void RStarTree::insert(int* val) {
+void RStarTree::insertData(int* val) {
+	std::unordered_set<int> visitedLevels;
+	insert(val, visitedLevels);
+}
+
+void RStarTree::insert(int* val, std::unordered_set<int>& visitedLevels) {
 	//this->root->insert(val);
 	//data.SaveBlock(this->rootId, this->root->getRawData().get());
 	auto node = chooseLeaf(val);
@@ -61,7 +66,38 @@ void RStarTree::insert(int* val) {
 		node->insert(val);
 		data.SaveBlock(node->getBlockId(), node->getRawData().get());
 	} else {
+		overflowTreatment(node, visitedLevels);
+	}
 
+}
+
+void RStarTree::overflowTreatment(std::shared_ptr<RStarTreeNode> node, std::unordered_set<int>& visitedLevels) {
+	if (node->level != 0 && visitedLevels.find(node->level) == visitedLevels.end()) {
+		reInsert(node);
+	} else {
+		//split();
+	}
+}
+
+void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node) {
+	auto bb = node->getBoundingBox();
+
+
+	std::sort(node->begin(), node->end(), [&](Key<int> a, Key<int> b) {
+		bb->distanceFromRectCenter(a.min, a.max) < bb->distanceFromRectCenter(b.min, b.max);
+	});
+
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int p = 0.3 * M;
+
+	std::vector<Key<int>> deletedNodes;
+	deletedNodes.assign(node->end() - p, node->end());
+	node->getKeys().erase(node->end() - p, node->end());
+
+	// TODO recalculate BB?
+
+	for (auto& deletedNode : deletedNodes) {
+		//insert(deletedNode); TODO
 	}
 
 }
@@ -80,8 +116,11 @@ std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {
 std::shared_ptr<RStarTreeNode> RStarTree::chooseLeaf(int* val) {
 	auto N = this->root;
 
+	int level = 0;
+
 	while (true) {
 		if (N->isLeaf()) {
+			N->level = level;
 			return N;
 		}
 
@@ -127,6 +166,7 @@ std::shared_ptr<RStarTreeNode> RStarTree::chooseLeaf(int* val) {
 		}
 
 		N = this->loadBlock(chosenKey->blockPtr);
+		level++;
 		continue;
 	}
 

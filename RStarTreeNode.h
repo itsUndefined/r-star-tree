@@ -4,6 +4,7 @@
 #include <memory>
 #include <functional>
 #include <algorithm>
+#include <cmath>
 
 namespace RStar {
 	template<class T>
@@ -111,7 +112,6 @@ namespace RStar {
 			}
 
 			return expandedArea - thisArea;
-
 		}
 
 		std::unique_ptr<Key<T>> getEnlargedToFit(T* point) {
@@ -136,6 +136,17 @@ namespace RStar {
 			return intersectingArea;
 		}
 
+		double distanceFromRectCenter(T* min, T* max) {
+			double distanceSqr = 0;
+			for (int i = 0; i < size; i++) {
+				T thisCenter = (this->max[i] - this->min[i]) / 2.0;
+				T center = (max[i] - min[i]) / 2.0;
+
+				distanceSqr += std::pow(center - thisCenter, 2);
+			}
+			return std::sqrt(distanceSqr);
+		}
+
 		int blockPtr;
 		T* min;
 		T* max;
@@ -158,6 +169,7 @@ namespace RStar {
 		double overlap(Key<int>& key);
 		bool isLeaf();
 		bool isFull();
+		std::unique_ptr<Key<int>> getBoundingBox();
 		bool getBlockId() { return blockId; }
 
 		//Used for forEach functionality
@@ -166,8 +178,13 @@ namespace RStar {
 		std::vector<Key<int>>::iterator end() { return data.end(); }
 		std::vector<Key<int>>::const_iterator end() const { return data.end(); }
 
+		std::vector<Key<int>>& getKeys() { return data; };
+
 		std::unique_ptr<char[]> getRawData();
+
+		int level = 0;
 	private:
+		
 		bool leaf;
 		int dimensions;
 		int blockId;

@@ -72,6 +72,25 @@ bool RStarTreeNode::isFull() {
 	return this->data.size() == BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
 }
 
+std::unique_ptr<Key<int>> RStarTreeNode::getBoundingBox() {
+	int* min = new int[dimensions];
+	int* max = new int[dimensions];
+	std::fill_n(min, dimensions, INT_MAX);
+	std::fill_n(max, dimensions, INT_MIN);
+
+	for (auto& key : data) {
+		for (int i = 0; i < dimensions; i++) {
+			if (key.min[i] < min[i]) {
+				min[i] = key.min[i];
+			} else if (key.max[i] > max[i]) {
+				max[i] = key.max[i];
+			}
+		}
+	}
+
+	return std::unique_ptr<Key<int>>(new Key<int>(min, max, blockId, dimensions));
+}
+
 std::unique_ptr<char[]> RStarTreeNode::getRawData() {
 	auto blockBinaryContent = std::unique_ptr<char[]>(new char[BLOCK_SIZE]);
 	int* dataPtr = (int*) blockBinaryContent.get();
@@ -91,5 +110,4 @@ std::unique_ptr<char[]> RStarTreeNode::getRawData() {
 	*dataPtr = INT_MAX;
 	return blockBinaryContent;
 }
-
 
