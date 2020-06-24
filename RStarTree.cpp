@@ -75,7 +75,7 @@ void RStarTree::overflowTreatment(std::shared_ptr<RStarTreeNode> node, std::unor
 	if (node->level != 0 && visitedLevels.find(node->level) == visitedLevels.end()) {
 		reInsert(node);
 	} else {
-		//split();
+		split(node);
 	}
 }
 
@@ -100,6 +100,10 @@ void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node) {
 		//insert(deletedNode); TODO
 	}
 
+}
+
+void RStarTree::split(std::shared_ptr<RStarTreeNode> node) {
+	
 }
 
 std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {

@@ -147,6 +147,14 @@ namespace RStar {
 			return std::sqrt(distanceSqr);
 		}
 
+		double marginValue() {
+			double sum = 0;
+			for (int i = 0; i < size; i++) {
+				sum += std::abs(this->max[i] - this->min[i]);
+			}
+			return sum * size;
+		}
+
 		int blockPtr;
 		T* min;
 		T* max;
@@ -170,7 +178,9 @@ namespace RStar {
 		bool isLeaf();
 		bool isFull();
 		std::unique_ptr<Key<int>> getBoundingBox();
+		std::unique_ptr<Key<int>> getBoundingBox(int start, int end);
 		bool getBlockId() { return blockId; }
+		int chooseSplitAxis();
 
 		//Used for forEach functionality
 		std::vector<Key<int>>::iterator begin() { return data.begin(); }

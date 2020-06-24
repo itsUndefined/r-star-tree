@@ -22,6 +22,7 @@ private:
 	void insert(int* val, std::unordered_set<int>& visitedLevels);
 	void overflowTreatment(std::shared_ptr<RStarTreeNode> node, std::unordered_set<int>& visitedLevels);
 	void reInsert(std::shared_ptr<RStarTreeNode> node);
+	void split(std::shared_ptr<RStarTreeNode> node);
 	std::shared_ptr<RStarTreeNode> chooseLeaf(int* val);
 
 	File data;
