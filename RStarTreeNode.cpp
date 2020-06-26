@@ -11,8 +11,8 @@ RStarTreeNode::RStarTreeNode(int dimensions, int leaf, int blockId) {
 }
 
 
-RStarTreeNode::RStarTreeNode(int size, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
-	this->data.resize(size);
+RStarTreeNode::RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<Key<int>>::iterator end, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
+	this->data.assign(begin, end);
 }
 
 RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
@@ -47,10 +47,6 @@ RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int block
 }
 
 void RStarTreeNode::insert(int* val) {
-	if (!isLeaf()) {
-		throw "should not have happened";
-	}
-
 	this->data.push_back(Key<int>(val, 69, this->dimensions));
 }
 
@@ -132,30 +128,89 @@ std::unique_ptr<char[]> RStarTreeNode::getRawData() {
 	return blockBinaryContent;
 }
 
-int RStarTreeNode::chooseSplitAxis() {
-	double* min = new double[dimensions];
-	for (int i = 0; i < dimensions; i++) {
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { a.min[i] < b.min[i]; });
-		auto bbLowerFirstGroup = getBoundingBox(0, this->data.size() - 2 * 0.4 + 2);
-		auto bbLowerSecondGroup = getBoundingBox(this->data.size() - 2 * 0.4 + 2, this->data.size());
-		double bbLowerMargin = bbLowerFirstGroup->marginValue() + bbLowerSecondGroup->marginValue();
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { a.max[i] > b.max[i]; });
-		auto bbUpperFirstGroup = getBoundingBox(0, this->data.size() - 2 * 0.4 + 2);
-		auto bbUpperSecondGroup = getBoundingBox(this->data.size() - 2 * 0.4 + 2, this->data.size());
-		double bbUpperMargin = bbUpperFirstGroup->marginValue() + bbUpperSecondGroup->marginValue();
-		if (bbLowerMargin < bbUpperMargin) {
-			min[i] = bbLowerMargin;
-		} else {
-			min[i] = bbUpperMargin;
-		}
+std::unique_ptr<RStarTreeNode> RStarTreeNode::split() {
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int m = 0.4 * M;
+
+	int axis = chooseSplitAxis();
+	int index = chooseSplitIndex(axis);
+	if (index < M - 2 * m + 2) {
+		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[axis] < b.min[axis]; });
+	} else {
+		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[axis] < b.max[axis]; });
+		index -= M - 2 * m + 2;
 	}
-	double minVal = min[0];
+
+
+	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index + 1, this->data.end(), dimensions, leaf, 69));
+	this->data.erase(this->data.begin(), this->data.begin() + m + index + 1);
+
+	return rightBlock;
+}
+
+int RStarTreeNode::chooseSplitAxis() {
+	double minSum = std::numeric_limits<double>::max();
 	int axis = 0;
-	for (int i = 1; i < dimensions; i++) {
-		if (min[i] < minVal) {
-			minVal = min[i];
+
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int m = 0.4 * M;
+
+	for (int i = 0; i < dimensions; i++) {
+
+		double marginSum = 0;
+
+		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[i] < b.min[i]; });
+		for (int k = 0; k < M - 2 * m + 2; k++) {
+			auto bbFirstGroup = getBoundingBox(0, m + k);
+			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
+		}
+
+		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[i] < b.max[i]; });
+		for (int k = 0; k < M - 2 * m + 2; k++) {
+			auto bbFirstGroup = getBoundingBox(0, m + k);
+			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
+		}
+
+		if (marginSum < minSum) {
+			minSum = marginSum;
 			axis = i;
 		}
 	}
+
 	return axis;
+}
+
+int RStarTreeNode::chooseSplitIndex(int axis) {
+
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int m = 0.4 * M;
+
+	double minOverlap = std::numeric_limits<double>::max();
+	int index = 0;
+
+	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[axis] < b.min[axis]; });
+	for (int k = 0; k < M - 2 * m + 2; k++) {
+		auto bbFirstGroup = getBoundingBox(0, m + k);
+		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+		auto overlap = bbFirstGroup->intersectArea(bbSecondGroup->min, bbSecondGroup->max);
+		if (overlap < minOverlap) {
+			minOverlap = overlap;
+			index = k;
+		}
+	}
+
+	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[axis] < b.max[axis]; });
+	for (int k = 0; k < M - 2 * m + 2; k++) {
+		auto bbFirstGroup = getBoundingBox(0, m + k);
+		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+		auto overlap = bbFirstGroup->intersectArea(bbSecondGroup->min, bbSecondGroup->max);
+		if (overlap < minOverlap) {
+			minOverlap = overlap;
+			index = k + (M - 2 * m + 2); // TODO check 
+		}
+	}
+
+	return index;
 }

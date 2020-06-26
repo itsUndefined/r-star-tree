@@ -150,9 +150,9 @@ namespace RStar {
 		double marginValue() {
 			double sum = 0;
 			for (int i = 0; i < size; i++) {
-				sum += std::abs(this->max[i] - this->min[i]);
+				sum += this->max[i] - this->min[i];
 			}
-			return sum * size;
+			return sum;
 		}
 
 		int blockPtr;
@@ -171,16 +171,17 @@ namespace RStar {
 	{
 	public:
 		RStarTreeNode(int dimensions, int leaf, int blockId);
-		RStarTreeNode(int size, int dimensions, int leaf, int blockId);
+		RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<Key<int>>::iterator end, int dimensions, int leaf, int blockId);
 		RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId);
 		void insert(int* val);
+		std::unique_ptr<RStarTreeNode> split();
 		double overlap(Key<int>& key);
 		bool isLeaf();
 		bool isFull();
 		std::unique_ptr<Key<int>> getBoundingBox();
 		std::unique_ptr<Key<int>> getBoundingBox(int start, int end);
 		bool getBlockId() { return blockId; }
-		int chooseSplitAxis();
+		
 
 		//Used for forEach functionality
 		std::vector<Key<int>>::iterator begin() { return data.begin(); }
@@ -192,8 +193,12 @@ namespace RStar {
 
 		std::unique_ptr<char[]> getRawData();
 
+		
+
 		int level = 0;
 	private:
+		int chooseSplitAxis();
+		int chooseSplitIndex(int axis);
 		
 		bool leaf;
 		int dimensions;

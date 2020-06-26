@@ -75,7 +75,8 @@ void RStarTree::overflowTreatment(std::shared_ptr<RStarTreeNode> node, std::unor
 	if (node->level != 0 && visitedLevels.find(node->level) == visitedLevels.end()) {
 		reInsert(node);
 	} else {
-		split(node);
+		auto rightBlock = node->split();
+		// Save both node and rightBlock
 	}
 }
 
@@ -84,7 +85,7 @@ void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node) {
 
 
 	std::sort(node->begin(), node->end(), [&](Key<int> a, Key<int> b) {
-		bb->distanceFromRectCenter(a.min, a.max) < bb->distanceFromRectCenter(b.min, b.max);
+		return bb->distanceFromRectCenter(a.min, a.max) < bb->distanceFromRectCenter(b.min, b.max);
 	});
 
 	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
@@ -100,10 +101,6 @@ void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node) {
 		//insert(deletedNode); TODO
 	}
 
-}
-
-void RStarTree::split(std::shared_ptr<RStarTreeNode> node) {
-	
 }
 
 std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {
