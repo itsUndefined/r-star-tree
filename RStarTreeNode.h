@@ -31,22 +31,18 @@ namespace RStar {
 
 		Key(T* values, int blockPtr, int size) {
 			this->min = new T[size];
-			this->max = nullptr;
+			this->max = new T[size];
 			std::copy(values, values + size, this->min);
+			std::copy(values, values + size, this->max);
 			this->blockPtr = blockPtr;
 			this->size = size;
 		}
 
 		Key(const Key<T>& source) {
-			if (source.max != nullptr) {
-				this->max = new T[source.size];
-				std::copy(source.max, source.max + source.size, this->max);
-			} else {
-				this->max = nullptr;
-			}
-
 			this->min = new T[source.size];
 			std::copy(source.min, source.min + source.size, this->min);
+			this->max = new T[source.size];
+			std::copy(source.max, source.max + source.size, this->max);
 			this->blockPtr = source.blockPtr;
 			this->size = source.size;
 		}
@@ -61,13 +57,17 @@ namespace RStar {
 			source.min = nullptr;
 			source.max = nullptr;
 		}
-
-		Key<T>& operator=(const Key<T>& source) {
-			int b = 1;
-			return *this;
-		}
 		*/
 
+		bool operator==(const Key<T>& rhs) {
+			for (int i = 0; i < this->size; i++) {
+				if (this->min[i] != rhs.min[i] || this->max[i] != rhs.max[i]) {
+					return false;
+				}
+			}
+
+			return true;
+		}
 
 		~Key() {
 			if (this->min != nullptr) {
@@ -78,11 +78,11 @@ namespace RStar {
 			}
 		}
 
-		bool overlaps(T* min, T* max) {
+		bool overlaps(Key<T>& key) {
 			for (int i = 0; i < size; i++) {
 				if (
-					this->min[i] < min[i] && this->max[i] > min[i] ||
-					this->min[i] < max[i] && this->max[i] > max[i]
+					this->min[i] < key.min[i] && this->max[i] > key.min[i] ||
+					this->min[i] < key.max[i] && this->max[i] > key.max[i]
 				) {
 					continue;
 				} else {
@@ -92,7 +92,7 @@ namespace RStar {
 			return true;
 		}
 
-		double areaEnlargementRequiredToFit(T* point) {
+		double areaEnlargementRequiredToFit(Key<T>& key) {
 			double thisArea = 1;
 			for (int i = 0; i < size; i++) {
 				thisArea *= this->max[i] - this->min[i];
@@ -101,11 +101,11 @@ namespace RStar {
 			double expandedArea = 1;
 
 			for (int i = 0; i < size; i++) {
-				if (this->max[i] >= point[i] && this->min[i] <= point[i]) {
+				if (this->max[i] >= key.max[i] && this->min[i] <= key.min[i]) {
 					expandedArea *= this->max[i] - this->min[i];
 				} else {
-					int distFromMax = std::abs(this->max[i] - point[i]);
-					int distFromMin = std::abs(this->min[i] - point[i]);
+					int distFromMax = std::abs(this->max[i] - key.max[i]);
+					int distFromMin = std::abs(this->min[i] - key.min[i]); //TODO check some results
 
 					expandedArea *= std::max(distFromMin, distFromMax);
 				}
@@ -114,33 +114,44 @@ namespace RStar {
 			return expandedArea - thisArea;
 		}
 
-		std::unique_ptr<Key<T>> getEnlargedToFit(T* point) {
+		std::unique_ptr<Key<T>> getEnlargedToFit(Key<T>& key) {
 			std::unique_ptr<Key<T>> enlarged(new Key<T>(this->min, this->max, this->blockPtr, this->size));
 
 			for (int i = 0; i < size; i++) {
-				if (point[i] < this->min[i]) {
-					enlarged->min[i] = point[i];
-				} else if (point[i] > this->max[i]) {
-					enlarged->max[i] = point[i];
+				if (key.min[i] < this->min[i]) {
+					enlarged->min[i] = key.min[i];
+				} else if (key.max[i] > this->max[i]) {
+					enlarged->max[i] = key.max[i];
 				}
 			}
 
 			return enlarged;
 		}
 
-		double intersectArea(T* min, T* max) {
+		void enlargeToFit(Key<T>& key) {
+			for (int i = 0; i < size; i++) {
+				if (key.min[i] < this->min[i]) {
+					this->min[i] = key.min[i];
+				}
+				else if (key.max[i] > this->max[i]) {
+					this->max[i] = key.max[i];
+				}
+			}
+		}
+
+		double intersectArea(Key<T>& key) {
 			double intersectingArea = 1;
 			for (int i = 0; i < size; i++) {
-				intersectingArea *= std::min(this->max[i], max[i]) - std::max(this->min[i], min[i]);
+				intersectingArea *= std::min(this->max[i], key.max[i]) - std::max(this->min[i], key.min[i]);
 			}
 			return intersectingArea;
 		}
 
-		double distanceFromRectCenter(T* min, T* max) {
+		double distanceFromRectCenter(Key<T>& key) {
 			double distanceSqr = 0;
 			for (int i = 0; i < size; i++) {
 				T thisCenter = (this->max[i] - this->min[i]) / 2.0;
-				T center = (max[i] - min[i]) / 2.0;
+				T center = (key.max[i] - key.min[i]) / 2.0;
 
 				distanceSqr += std::pow(center - thisCenter, 2);
 			}
@@ -167,13 +178,15 @@ namespace RStar {
 		int size;
 	};
 
+	
+
 	class RStarTreeNode
 	{
 	public:
 		RStarTreeNode(int dimensions, int leaf, int blockId);
 		RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<Key<int>>::iterator end, int dimensions, int leaf, int blockId);
 		RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId);
-		void insert(int* val);
+		void insert(Key<int>& key);
 		std::unique_ptr<RStarTreeNode> split();
 		double overlap(Key<int>& key);
 		bool isLeaf();

@@ -165,6 +165,7 @@
     <ClInclude Include="BTreeNode.h" />
     <ClInclude Include="Data.h" />
     <ClInclude Include="File.h" />
+    <ClInclude Include="InsertionNodeContext.h" />
     <ClInclude Include="RStarTree.h" />
     <ClInclude Include="RStarTreeNode.h" />
   </ItemGroup>

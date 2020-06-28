@@ -25,16 +25,25 @@ int main() {
 
 	//tree.search(new int[1]{ 0 }, new int[1]{ 20 });
 
+	//int min[2] = { 0, 0 };
+	//int max[2] = { 2, 2 };
+
+	//RStar::Key<int> a(min, max, 1, 2);
+
+	//int point[2] = { 5, 1 };
+
+	//auto result = a.areaEnlargementRequiredToFit(point);
+
+	//auto result1 = *a.getEnlargedToFit(point);
+
+
+	RStarTree magicBoy(2);
+
 	int min[2] = { 0, 0 };
-	int max[2] = { 2, 2 };
 
-	RStar::Key<int> a(min, max, 1, 2);
+	magicBoy.insertData(min);
 
-	int point[2] = { 5, 1 };
 
-	auto result = a.areaEnlargementRequiredToFit(point);
-
-	auto result1 = *a.getEnlargedToFit(point);
 
 	return 0;
 }

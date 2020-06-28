@@ -21,7 +21,7 @@ RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int block
 		if (min[0] == INT_MAX) {
 			break;
 		}
-		int leftBlockPtr = (int)*(diskData + i * Key<int>::GetKeySize(dimensions) + 2 * dimensions * sizeof(int));
+		int leftBlockPtr = *(int*)(diskData + i * Key<int>::GetKeySize(dimensions) + 2 * dimensions * sizeof(int));
 		if (!leaf) {
 			int* max = (int*)(diskData + i * Key<int>::GetKeySize(dimensions) + dimensions * sizeof(int));
 			this->data.push_back(Key<int>(
@@ -46,17 +46,17 @@ RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int block
 	*/
 }
 
-void RStarTreeNode::insert(int* val) {
-	this->data.push_back(Key<int>(val, 69, this->dimensions));
+void RStarTreeNode::insert(RStar::Key<int>& key) {
+	this->data.push_back(key);
 }
 
-double RStar::RStarTreeNode::overlap(Key<int>& key) {
+double RStar::RStarTreeNode::overlap(RStar::Key<int>& key) {
 	double overlapArea = 0.0;
 	for (auto& node : *this) {
 		if (node.blockPtr == key.blockPtr) {
 			continue;
 		}
-		overlapArea += key.intersectArea(node.min, node.max);
+		overlapArea += key.intersectArea(node);
 	}
 	return overlapArea;
 }
@@ -141,7 +141,6 @@ std::unique_ptr<RStarTreeNode> RStarTreeNode::split() {
 		index -= M - 2 * m + 2;
 	}
 
-
 	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index + 1, this->data.end(), dimensions, leaf, 69));
 	this->data.erase(this->data.begin(), this->data.begin() + m + index + 1);
 
@@ -194,7 +193,7 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
-		auto overlap = bbFirstGroup->intersectArea(bbSecondGroup->min, bbSecondGroup->max);
+		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
 		if (overlap < minOverlap) {
 			minOverlap = overlap;
 			index = k;
@@ -205,7 +204,7 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
-		auto overlap = bbFirstGroup->intersectArea(bbSecondGroup->min, bbSecondGroup->max);
+		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
 		if (overlap < minOverlap) {
 			minOverlap = overlap;
 			index = k + (M - 2 * m + 2); // TODO check 
