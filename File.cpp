@@ -9,7 +9,7 @@ File::File(std::wstring filename) {
 	file.open(filename, std::ios::binary | std::ios::in | std::ios::out);
 	*/
 
-	hFile = CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE , 0/*FILE_SHARE_READ*/, NULL, OPEN_ALWAYS, FILE_FLAG_NO_BUFFERING, NULL);
+	hFile = CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE , 0/*FILE_SHARE_READ*/, NULL, OPEN_ALWAYS, /*FILE_FLAG_NO_BUFFERING*/ NULL, NULL);
 	auto b = GetLastError();
 	if (hFile == INVALID_HANDLE_VALUE) {
 		exit(1);

@@ -59,6 +59,17 @@ namespace RStar {
 		}
 		*/
 
+		Key<T>& operator=(const Key<T>& source) {
+			this->min = new T[source.size];
+			std::copy(source.min, source.min + source.size, this->min);
+			this->max = new T[source.size];
+			std::copy(source.max, source.max + source.size, this->max);
+			this->blockPtr = source.blockPtr;
+			this->size = source.size;
+
+			return *this;
+		}
+
 		bool operator==(const Key<T>& rhs) {
 			for (int i = 0; i < this->size; i++) {
 				if (this->min[i] != rhs.min[i] || this->max[i] != rhs.max[i]) {

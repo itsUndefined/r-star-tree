@@ -16,7 +16,7 @@ RStarTreeNode::RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<
 }
 
 RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
-	for (int i = 0; i < BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1; i++) {
+	for (int i = 0; i < BLOCK_SIZE / Key<int>::GetKeySize(dimensions); i++) {
 		int* min = (int*)(diskData + i * Key<int>::GetKeySize(dimensions));
 		if (min[0] == INT_MAX) {
 			break;
@@ -66,7 +66,7 @@ bool RStarTreeNode::isLeaf() {
 }
 
 bool RStarTreeNode::isFull() {
-	return this->data.size() == BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	return this->data.size() == BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
 }
 
 std::unique_ptr<Key<int>> RStarTreeNode::getBoundingBox() {
@@ -124,12 +124,14 @@ std::unique_ptr<char[]> RStarTreeNode::getRawData() {
 		*dataPtr = it->blockPtr;
 		dataPtr += 1;
 	}
-	*dataPtr = INT_MAX;
+	if (!isFull()) {
+		*dataPtr = INT_MAX;
+	}
 	return blockBinaryContent;
 }
 
 std::unique_ptr<RStarTreeNode> RStarTreeNode::split() {
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
 	int m = 0.4 * M;
 
 	int axis = chooseSplitAxis();
@@ -151,24 +153,26 @@ int RStarTreeNode::chooseSplitAxis() {
 	double minSum = std::numeric_limits<double>::max();
 	int axis = 0;
 
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
 	int m = 0.4 * M;
 
 	for (int i = 0; i < dimensions; i++) {
 
 		double marginSum = 0;
 
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[i] < b.min[i]; });
+		std::sort(this->data.begin(), this->data.end(), [&](Key<int>& a, Key<int>& b) {
+			return a.min[i] < b.min[i]; 
+		});
 		for (int k = 0; k < M - 2 * m + 2; k++) {
 			auto bbFirstGroup = getBoundingBox(0, m + k);
-			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 1);
 			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
 		}
 
 		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[i] < b.max[i]; });
 		for (int k = 0; k < M - 2 * m + 2; k++) {
 			auto bbFirstGroup = getBoundingBox(0, m + k);
-			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 1);
 			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
 		}
 

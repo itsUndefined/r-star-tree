@@ -77,7 +77,7 @@ void RStarTree::insert(Key<int>& val, std::unordered_set<int>& visitedLevels, in
 	//auto path = result.keyIndexPath;
 
 
-	for (int i = result.blockPath.size() - 1; i >= -1; i--) { // -1?
+	for (int i = result.blockPath.size() - 1; i >= -1; i--) { // -1? What about split of root?
 		if (!node->isFull()) {
 			node->insert(val);
 			data.SaveBlock(node->getBlockId(), node->getRawData().get());
