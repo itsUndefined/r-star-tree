@@ -143,8 +143,8 @@ std::unique_ptr<RStarTreeNode> RStarTreeNode::split() {
 		index -= M - 2 * m + 2;
 	}
 
-	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index + 1, this->data.end(), dimensions, leaf, 69));
-	this->data.erase(this->data.begin(), this->data.begin() + m + index + 1);
+	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index + 1, this->data.end(), dimensions, leaf, INT_MAX));
+	this->data.erase(this->data.begin() + m + index + 1, this->data.end());
 
 	return rightBlock;
 }
@@ -198,6 +198,11 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
 		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
+
+		if (overlap == minOverlap) {
+			throw "We need to resolve ties by using area";
+		}
+
 		if (overlap < minOverlap) {
 			minOverlap = overlap;
 			index = k;

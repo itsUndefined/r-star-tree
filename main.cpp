@@ -39,7 +39,7 @@ int main() {
 
 	RStarTree magicBoy(2);
 
-	int min[2] = { 5, 5 };
+	int min[2] = { 10, 10 };
 
 	magicBoy.insertData(min);
 

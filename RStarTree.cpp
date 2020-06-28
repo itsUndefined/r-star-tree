@@ -66,10 +66,6 @@ void RStarTree::insertData(int* val) {
 }
 
 void RStarTree::insert(Key<int>& val, std::unordered_set<int>& visitedLevels, int level) {
-	//this->root->insert(val);
-	//data.SaveBlock(this->rootId, this->root->getRawData().get());
-
-
 
 	auto result = chooseSubtree(val, level);
 
@@ -93,12 +89,31 @@ void RStarTree::insert(Key<int>& val, std::unordered_set<int>& visitedLevels, in
 			node->insert(val);
 			auto parentForRightBlock = overflowTreatment(node, visitedLevels);
 			if (parentForRightBlock != nullptr) {
-				auto& parentBlock = result.blockPath[i];
-				auto& parentKeyOfLeftBlock = parentBlock->getKeys().at(result.keyIndexPath[i]);
-				parentKeyOfLeftBlock = *node->getBoundingBox();
+				if (i == -1) {
+					std::shared_ptr<RStarTreeNode> parentBlock = std::shared_ptr<RStarTreeNode>(new RStarTreeNode(dimensions, false, nextBlockId));
+					parentBlock->insert(*node->getBoundingBox());
+					parentBlock->insert(*parentForRightBlock);
+					data.SaveBlock(parentBlock->getBlockId(), parentBlock->getRawData().get());
 
-				val = *parentForRightBlock;
-				node = parentBlock;
+					this->root = parentBlock;
+					this->rootId = nextBlockId;
+
+					std::fstream metadataFile;
+					metadataFile.open("rtree_metadata.bin", std::ios::binary | std::ios::in | std::ios::out);
+
+					metadataFile.seekp(0);
+					metadataFile.write((char*)&this->rootId, sizeof(int));
+
+
+					nextBlockId++;
+				}
+				else {
+					auto& parentBlock = result.blockPath[i];
+					auto& parentKeyOfLeftBlock = parentBlock->getKeys().at(result.keyIndexPath[i]);
+					parentKeyOfLeftBlock = *node->getBoundingBox();
+					val = *parentForRightBlock;
+					node = parentBlock;
+				}
 				continue;
 			} else {
 				break; // What the hell happened on reinsert? Did everything get rebalanced happily?
@@ -118,7 +133,7 @@ std::unique_ptr<Key<int>> RStarTree::overflowTreatment(std::shared_ptr<RStarTree
 	} else {
 		auto rightBlock = node->split();
 		data.SaveBlock(node->getBlockId(), node->getRawData().get());
-		data.SaveBlock(rightBlock->getBlockId(), rightBlock->getRawData().get());
+		data.SaveBlock(nextBlockId, rightBlock->getRawData().get());
 		auto bb = rightBlock->getBoundingBox();
 		bb->blockPtr = nextBlockId++;
 		return bb;
@@ -133,7 +148,7 @@ void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node, std::unordered_set
 		return bb->distanceFromRectCenter(a) < bb->distanceFromRectCenter(b);
 	});
 
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
 	int p = 0.3 * M;
 
 	std::vector<Key<int>> deletedNodes;
@@ -201,6 +216,9 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 				if (overlapEnlargement < minimum) {
 					minimum = overlapEnlargement;
 					chosenKey = &A;
+				}
+				if (pq.size() == 0) {
+					break;
 				}
 			}
 		}

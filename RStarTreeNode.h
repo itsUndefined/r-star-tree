@@ -153,7 +153,11 @@ namespace RStar {
 		double intersectArea(Key<T>& key) {
 			double intersectingArea = 1;
 			for (int i = 0; i < size; i++) {
-				intersectingArea *= std::min(this->max[i], key.max[i]) - std::max(this->min[i], key.min[i]);
+				auto intersectEdge = std::min(this->max[i], key.max[i]) - std::max(this->min[i], key.min[i]);
+				if (intersectEdge <= 0) {
+					return 0;
+				}
+				intersectingArea *= intersectEdge;
 			}
 			return intersectingArea;
 		}
@@ -161,8 +165,8 @@ namespace RStar {
 		double distanceFromRectCenter(Key<T>& key) {
 			double distanceSqr = 0;
 			for (int i = 0; i < size; i++) {
-				T thisCenter = (this->max[i] - this->min[i]) / 2.0;
-				T center = (key.max[i] - key.min[i]) / 2.0;
+				T thisCenter = (this->max[i] + this->min[i]) / 2.0;
+				T center = (key.max[i] + key.min[i]) / 2.0;
 
 				distanceSqr += std::pow(center - thisCenter, 2);
 			}
@@ -204,7 +208,7 @@ namespace RStar {
 		bool isFull();
 		std::unique_ptr<Key<int>> getBoundingBox();
 		std::unique_ptr<Key<int>> getBoundingBox(int start, int end);
-		bool getBlockId() { return blockId; }
+		int getBlockId() { return blockId; }
 		
 
 		//Used for forEach functionality
