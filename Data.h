@@ -17,14 +17,36 @@ struct Column {
 
 class Data
 {
+
+	class RecordBuilder
+	{
+
+	public:
+		RecordBuilder(Data* data);
+		RecordBuilder& InsertInteger(int data);
+		RecordBuilder& InsertFloat(float data);
+		RecordBuilder& InsertCharN(std::wstring data);
+		void BuildAndSave();
+	private:
+		Data* data;
+		std::vector<Column>::iterator nextColumn;
+		std::unique_ptr<char[]> builtData;
+		char* currentWritePtr;
+	};
+
 public:
 	Data();
 	void PrintData();
-	void InsertRow(std::unique_ptr<char> data);
+	void InsertRow(std::unique_ptr<char[]> data);
+	RecordBuilder GetRecordBuilder();
 
 
 private:
 	File data;
 	std::vector<Column> columns;
+	int rowSize = 0;
+	std::unique_ptr<char[]> currentBlockForWrite;
+	int currentBlockId;
+	int currentIndexAvailableForWrite;
 };
 
