@@ -1,8 +1,8 @@
 #include "RStarTree.h"
 
 #include <fstream>
-#include <queue>
 #include <iterator>
+#include <queue>
 
 using namespace RStar;
 
@@ -56,6 +56,28 @@ void RStarTree::search(Key<int>& rangeSearch, std::shared_ptr<RStarTreeNode> blo
 		if (key.overlaps(rangeSearch)) {
 			this->search(rangeSearch, this->loadBlock(key.blockPtr));
 		}
+	}
+}
+
+std::vector<Key<int>> RStarTree::kNNSearch(int* min, int* max, int k) {
+	std::shared_ptr<RStarTreeNode> loadedBlock = this->root;
+	Key<int> fromPoint(min, max, INT_MAX, dimensions);
+	std::vector<Key<int>> kNN;
+	kNN.reserve(k);
+	std::priority_queue<std::pair<Key<int>, bool>, std::vector<std::pair<Key<int>, bool>>, std::function<bool(std::pair<Key<int>, bool>&, std::pair<Key<int>, bool>&)>> pq([&](std::pair<Key<int>, bool> &a, std::pair<Key<int>, bool> &b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
+	while (true) {
+		for (auto& node : *loadedBlock) {
+			pq.push(std::pair<Key<int>, bool>(node, loadedBlock->isLeaf()));
+		}
+		while (pq.top().second && kNN.size() < k) {
+			kNN.push_back(pq.top().first);
+			pq.pop();
+		}
+		if (pq.empty() || kNN.size() == k) {
+			return kNN;
+		}
+		loadedBlock = this->loadBlock(pq.top().first.blockPtr);
+		pq.pop();
 	}
 }
 

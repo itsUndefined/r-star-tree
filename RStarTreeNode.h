@@ -181,6 +181,17 @@ namespace RStar {
 			return sum;
 		}
 
+		double distanceFromEdge(Key<T>& key) {
+			double distance = 0;
+			for (int i = 0; i < size; i++) {
+				T point = key.max[i] + key.min[i];
+				T rect = this->max[i] + this->min[i];
+
+				distance += std::pow(point - rect, 2);
+			}
+			return std::sqrt(distance);
+		}
+
 		int blockPtr;
 		T* min;
 		T* max;

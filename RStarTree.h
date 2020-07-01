@@ -5,13 +5,14 @@
 #include <memory>
 #include "File.h"
 #include <unordered_set>
-
+#include <utility>
 
 class RStarTree
 {
 public:
 	RStarTree(int dimensions);
 	void rangeSearch(int* min, int* max);
+	std::vector<RStar::Key<int>> kNNSearch(int* min, int* max, int k);
 	void insertData(int* val);
 
 private:
