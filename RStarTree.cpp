@@ -32,24 +32,24 @@ RStarTree::RStarTree(int dimensions): data(L"rtree.bin") {
 	this->root = this->loadBlock(this->rootId);
 }
 
-void RStarTree::rangeSearch(int* min, int* max) {
+std::vector<Key<int>> RStarTree::rangeSearch(int* min, int* max) {
 	std::shared_ptr<RStarTreeNode> loadedBlock = this->root;
 	Key<int> rangeSearch(min, max, INT_MAX, dimensions);
-	this->search(rangeSearch, loadedBlock);
+	return this->search(rangeSearch, loadedBlock);
 }
 
-void RStarTree::search(Key<int>& rangeSearch, std::shared_ptr<RStarTreeNode> block) {
+std::vector<Key<int>> RStarTree::search(Key<int>& rangeSearch, std::shared_ptr<RStarTreeNode> block) {
+	std::vector<Key<int>> list;
 	if (block->isLeaf()) {
 		for (auto& point : *block) {
 			for (int i = 0; i < dimensions; i++) {
 				if (rangeSearch.min[i] < point.min[i] && rangeSearch.max[i] > point.min[i]) {
-					// Print point to output
-					int i = 1;
+					list.push_back(point);
 				}
 			}
 		}
 
-		return;
+		return list;
 	}
 
 	for (auto& key : *block) {
@@ -216,7 +216,9 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 
 		auto child = loadBlock(N->begin()->blockPtr);
 
-		int minimum = INT_MAX;
+		int minOverlap = INT_MAX;
+		double minAreaEnlargmement = DBL_MAX;
+		double minArea;
 		Key<int>* chosenKey = nullptr;
 
 		if (child->isLeaf()) {
@@ -232,11 +234,26 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 				auto enlargedKey = A.getEnlargedToFit(val);
 				double afterEnlargementOverlap = N->overlap(*enlargedKey);
 				auto overlapEnlargement = afterEnlargementOverlap - beforeEnlargementOverlap;
-				if (overlapEnlargement == minimum) {
-					throw "We NEED to resolve TIES!!!!";
+				double areaEnlargmement = A.areaEnlargementRequiredToFit(val);
+				double area = A.areaValue();
+				if (overlapEnlargement == minOverlap) {
+					if (areaEnlargmement < minAreaEnlargmement) {
+						minArea = area;
+						minAreaEnlargmement = areaEnlargmement;
+						minOverlap = overlapEnlargement;
+						chosenKey = &A;
+					}
+					else if (areaEnlargmement == minAreaEnlargmement && area < minArea) {
+						minArea = area;
+						minAreaEnlargmement = areaEnlargmement;
+						minOverlap = overlapEnlargement;
+						chosenKey = &A;
+					}
 				}
-				if (overlapEnlargement < minimum) {
-					minimum = overlapEnlargement;
+				if (overlapEnlargement < minOverlap) {
+					minArea = area;
+					minAreaEnlargmement = areaEnlargmement;
+					minOverlap = overlapEnlargement;
 					chosenKey = &A;
 				}
 				if (pq.size() == 0) {
@@ -248,11 +265,15 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 		if (!child->isLeaf()) {
 			for (auto& node : *N) {
 				auto areaEnlargmentRequired = node.areaEnlargementRequiredToFit(val);
-				if (areaEnlargmentRequired == minimum) {
-					throw "We NEED to resolve TIES!!!!";
+				double area = node.areaValue();
+				if (areaEnlargmentRequired == minOverlap && area < minArea) {
+					minArea = area;
+					minAreaEnlargmement = areaEnlargmentRequired;
+					chosenKey = &node;
 				}
-				if (areaEnlargmentRequired < minimum) {
-					minimum = areaEnlargmentRequired;
+				if (areaEnlargmentRequired < minAreaEnlargmement) {
+					minArea = area;
+					minAreaEnlargmement = areaEnlargmentRequired;
 					chosenKey = &node;
 				}
 			}

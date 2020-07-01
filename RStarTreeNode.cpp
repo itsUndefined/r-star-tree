@@ -191,6 +191,7 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 	int m = 0.4 * M;
 
 	double minOverlap = std::numeric_limits<double>::max();
+	double minArea = std::numeric_limits<double>::max();
 	int index = 0;
 
 	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[axis] < b.min[axis]; });
@@ -198,12 +199,16 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
 		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
+		double area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
 
-		if (overlap == minOverlap) {
-			throw "We need to resolve ties by using area";
+		if (overlap == minOverlap && area < minArea) {
+			minArea = area;
+			minOverlap = overlap;
+			index = k;
 		}
 
 		if (overlap < minOverlap) {
+			minArea = area;
 			minOverlap = overlap;
 			index = k;
 		}

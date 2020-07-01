@@ -11,12 +11,12 @@ class RStarTree
 {
 public:
 	RStarTree(int dimensions);
-	void rangeSearch(int* min, int* max);
+	std::vector<RStar::Key<int>> rangeSearch(int* min, int* max);
 	std::vector<RStar::Key<int>> kNNSearch(int* min, int* max, int k);
 	void insertData(int* val);
 
 private:
-	void search(RStar::Key<int>& rangeSearch, std::shared_ptr<RStar::RStarTreeNode> block);
+	std::vector<RStar::Key<int>> search(RStar::Key<int>& rangeSearch, std::shared_ptr<RStar::RStarTreeNode> block);
 	std::unique_ptr<RStar::RStarTreeNode> loadBlock(int blockId);
 
 	void insert(RStar::Key<int>& val, std::unordered_set<int>& visitedLevels, int level);
