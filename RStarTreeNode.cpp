@@ -143,8 +143,8 @@ std::unique_ptr<RStarTreeNode> RStarTreeNode::split() {
 		index -= M - 2 * m + 2;
 	}
 
-	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index + 1, this->data.end(), dimensions, leaf, INT_MAX));
-	this->data.erase(this->data.begin() + m + index + 1, this->data.end());
+	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index, this->data.end(), dimensions, leaf, INT_MAX));
+	this->data.erase(this->data.begin() + m + index, this->data.end());
 
 	return rightBlock;
 }
@@ -165,14 +165,14 @@ int RStarTreeNode::chooseSplitAxis() {
 		});
 		for (int k = 0; k < M - 2 * m + 2; k++) {
 			auto bbFirstGroup = getBoundingBox(0, m + k);
-			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 1);
+			auto bbSecondGroup = getBoundingBox(m + k, M + 1);
 			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
 		}
 
 		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[i] < b.max[i]; });
 		for (int k = 0; k < M - 2 * m + 2; k++) {
 			auto bbFirstGroup = getBoundingBox(0, m + k);
-			auto bbSecondGroup = getBoundingBox(m + k + 1, M + 1);
+			auto bbSecondGroup = getBoundingBox(m + k, M + 1);
 			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
 		}
 
@@ -187,7 +187,7 @@ int RStarTreeNode::chooseSplitAxis() {
 
 int RStarTreeNode::chooseSplitIndex(int axis) {
 
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions) - 1;
+	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
 	int m = 0.4 * M;
 
 	double minOverlap = std::numeric_limits<double>::max();
@@ -197,7 +197,7 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[axis] < b.min[axis]; });
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
-		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+		auto bbSecondGroup = getBoundingBox(m + k, M + 1);
 		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
 		double area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
 
@@ -217,13 +217,21 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[axis] < b.max[axis]; });
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
-		auto bbSecondGroup = getBoundingBox(m + k + 1, M + 2);
+		auto bbSecondGroup = getBoundingBox(m + k, M + 1);
 		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
-		if (overlap < minOverlap) {
+		double area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
+
+		if (overlap == minOverlap && area < minArea) {
+			minArea = area;
 			minOverlap = overlap;
-			index = k + (M - 2 * m + 2); // TODO check 
+			index = k + (M - 2 * m + 2); // TODO check
+		}
+
+		if (overlap < minOverlap) {
+			minArea = area;
+			minOverlap = overlap;
+			index = k + (M - 2 * m + 2);
 		}
 	}
-
 	return index;
 }
