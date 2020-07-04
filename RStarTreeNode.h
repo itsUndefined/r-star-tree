@@ -19,7 +19,7 @@ namespace RStar {
 
 		// return the the sieze of the key
 		static int GetKeySize(int dimensions) {
-			return sizeof(int) + dimensions * 2 * sizeof(int);
+			return sizeof(int) + dimensions * 2 * sizeof(T);
 		}
 
 		Key(T* min, T* max, int blockPtr, int size) {
@@ -106,21 +106,21 @@ namespace RStar {
 			return true;
 		}
 
-		// return the area that the rectangle must expand inorder to fit
-		double areaEnlargementRequiredToFit(Key<T>& key) {
-			double thisArea = 1;
+        // return the area that the rectangle must expand inorder to fit
+		T areaEnlargementRequiredToFit(Key<T>& key) {
+			T thisArea = 1;
 			for (int i = 0; i < size; i++) {
 				thisArea *= this->max[i] - this->min[i];
 			}
 
-			double expandedArea = 1;
+			T expandedArea = 1;
 
 			for (int i = 0; i < size; i++) {
 				if (this->max[i] >= key.max[i] && this->min[i] <= key.min[i]) {
 					expandedArea *= this->max[i] - this->min[i];
 				} else {
-					int distFromMax = std::abs(this->max[i] - key.max[i]);
-					int distFromMin = std::abs(this->min[i] - key.min[i]); //TODO check some results
+					T distFromMax = std::abs(this->max[i] - key.max[i]);
+					T distFromMin = std::abs(this->min[i] - key.min[i]); //TODO check some results
 
 					expandedArea *= std::max(distFromMin, distFromMax);
 				}
@@ -136,7 +136,8 @@ namespace RStar {
 			for (int i = 0; i < size; i++) {
 				if (key.min[i] < this->min[i]) {
 					enlarged->min[i] = key.min[i];
-				} else if (key.max[i] > this->max[i]) {
+				} 
+				if (key.max[i] > this->max[i]) {
 					enlarged->max[i] = key.max[i];
 				}
 			}
@@ -150,17 +151,17 @@ namespace RStar {
 				if (key.min[i] < this->min[i]) {
 					this->min[i] = key.min[i];
 				}
-				else if (key.max[i] > this->max[i]) {
+				if (key.max[i] > this->max[i]) {
 					this->max[i] = key.max[i];
 				}
 			}
 		}
 
 		// return the intersect area between two rectangles
-		double intersectArea(Key<T>& key) {
-			double intersectingArea = 1;
+		T intersectArea(Key<T>& key) {
+			T intersectingArea = 1;
 			for (int i = 0; i < size; i++) {
-				auto intersectEdge = std::min(this->max[i], key.max[i]) - std::max(this->min[i], key.min[i]);
+				T intersectEdge = std::min(this->max[i], key.max[i]) - std::max(this->min[i], key.min[i]);
 				if (intersectEdge <= 0) {
 					return 0;
 				}
@@ -173,8 +174,8 @@ namespace RStar {
 		double distanceFromRectCenter(Key<T>& key) {
 			double distanceSqr = 0;
 			for (int i = 0; i < size; i++) {
-				T thisCenter = (this->max[i] + this->min[i]) / 2.0;
-				T center = (key.max[i] + key.min[i]) / 2.0;
+				double thisCenter = (this->max[i] + this->min[i]) / 2.0;
+				double center = (key.max[i] + key.min[i]) / 2.0;
 
 				distanceSqr += std::pow(center - thisCenter, 2);
 			}
@@ -182,8 +183,8 @@ namespace RStar {
 		}
 
 		// return the margin value of the rectangle
-		double marginValue() {
-			double sum = 0;
+		T marginValue() {
+			T sum = 0;
 			for (int i = 0; i < size; i++) {
 				sum += this->max[i] - this->min[i];
 			}
@@ -203,8 +204,8 @@ namespace RStar {
 		}
 
 		// return the area value of the rectangle
-		double areaValue() {
-			double val = 1;
+		T areaValue() {
+			T val = 1;
 			for (int i = 0; i < size; i++) {
 				val *= this->max[i] - this->min[i];
 			}
@@ -225,37 +226,38 @@ namespace RStar {
 
 	
 	// the class creates a node for the data structure of R*Tree
+	template<class T>
 	class RStarTreeNode
 	{
 	public:
 		RStarTreeNode(int dimensions, int leaf, int blockId);
-		RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<Key<int>>::iterator end, int dimensions, int leaf, int blockId);
+		RStarTreeNode(typename std::vector<Key<T>>::iterator begin, typename std::vector<Key<T>>::iterator end, int dimensions, int leaf, int blockId);
 		RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId);
 		// insert a data or node thge the node
-		void insert(Key<int>& key);
+		void insert(Key<T>& key);
 		// implements Split Algorithm
 		std::unique_ptr<RStarTreeNode> split();
 		// checks if a rectangle overlap another rectangle
-		double overlap(Key<int>& key);
+		T overlap(Key<T>& key);
 		// checks if a node is a leaf
 		bool isLeaf();
 		// checks if a node is full
 		bool isFull();
 		// returns the bounding rectangle of rectangles
-		std::unique_ptr<Key<int>> getBoundingBox();
+		std::unique_ptr<Key<T>> getBoundingBox();
 		// returns the bounding rectangle of rectangles starting from a specific entry and ending to another entry
-		std::unique_ptr<Key<int>> getBoundingBox(int start, int end);
+		std::unique_ptr<Key<T>> getBoundingBox(int start, int end);
 		// returns the block id
 		int getBlockId() { return blockId; }
 		
 
 		//Used for forEach functionality
-		std::vector<Key<int>>::iterator begin() { return data.begin(); }
-		std::vector<Key<int>>::const_iterator begin() const { return data.begin(); }
-		std::vector<Key<int>>::iterator end() { return data.end(); }
-		std::vector<Key<int>>::const_iterator end() const { return data.end(); }
+		typename std::vector<Key<T>>::iterator begin() { return data.begin(); }
+		typename std::vector<Key<T>>::const_iterator begin() const { return data.begin(); }
+		typename std::vector<Key<T>>::iterator end() { return data.end(); }
+		typename std::vector<Key<T>>::const_iterator end() const { return data.end(); }
 
-		std::vector<Key<int>>& getKeys() { return data; };
+		std::vector<Key<T>>& getKeys() { return data; };
 
 		std::unique_ptr<char[]> getRawData();
 
@@ -271,7 +273,7 @@ namespace RStar {
 		bool leaf;
 		int dimensions;
 		int blockId;
-		std::vector<Key<int>> data;
+		std::vector<Key<T>> data;
 	};
 }
 

@@ -172,6 +172,7 @@
   <ItemGroup>
     <None Include="data.bin" />
     <None Include="data_metadata.bin" />
+    <None Include="map.osm" />
     <None Include="rtree.bin" />
     <None Include="rtree_metadata.bin" />
   </ItemGroup>

@@ -6,7 +6,8 @@
 
 using namespace RStar;
 
-RStarTree::RStarTree(int dimensions): data(L"rtree.bin") {
+template<class T>
+RStarTree<T>::RStarTree(int dimensions): data(L"rtree.bin") {
 	auto blockCount = data.GetBlockCount();
 
 	this->nextBlockId = blockCount + 1;
@@ -32,14 +33,16 @@ RStarTree::RStarTree(int dimensions): data(L"rtree.bin") {
 	this->root = this->loadBlock(this->rootId);
 }
 
-std::vector<Key<int>> RStarTree::rangeSearch(int* min, int* max) {
-	std::shared_ptr<RStarTreeNode> loadedBlock = this->root;
-	Key<int> rangeSearch(min, max, INT_MAX, dimensions);
+template<class T>
+std::vector<Key<T>> RStarTree<T>::rangeSearch(T* min, T* max) {
+	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
+	Key<T> rangeSearch(min, max, INT_MAX, dimensions);
 	return this->search(rangeSearch, loadedBlock);
 }
 
-std::vector<Key<int>> RStarTree::search(Key<int>& rangeSearch, std::shared_ptr<RStarTreeNode> block) {
-	std::vector<Key<int>> list;
+template<class T>
+std::vector<Key<T>> RStarTree<T>::search(Key<T>& rangeSearch, std::shared_ptr<RStarTreeNode<T>> block) {
+	std::vector<Key<T>> list;
 	if (block->isLeaf()) {
 		for (auto& point : *block) {
 			for (int i = 0; i < dimensions; i++) {
@@ -59,15 +62,16 @@ std::vector<Key<int>> RStarTree::search(Key<int>& rangeSearch, std::shared_ptr<R
 	}
 }
 
-std::vector<Key<int>> RStarTree::kNNSearch(int* min, int* max, int k) {
-	std::shared_ptr<RStarTreeNode> loadedBlock = this->root;
-	Key<int> fromPoint(min, max, INT_MAX, dimensions);
-	std::vector<Key<int>> kNN;
+template<class T>
+std::vector<Key<T>> RStarTree<T>::kNNSearch(T* min, T* max, int k) {
+	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
+	Key<T> fromPoint(min, max, INT_MAX, dimensions);
+	std::vector<Key<T>> kNN;
 	kNN.reserve(k);
-	std::priority_queue<std::pair<Key<int>, bool>, std::vector<std::pair<Key<int>, bool>>, std::function<bool(std::pair<Key<int>, bool>&, std::pair<Key<int>, bool>&)>> pq([&](std::pair<Key<int>, bool> &a, std::pair<Key<int>, bool> &b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
+	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
 	while (true) {
 		for (auto& node : *loadedBlock) {
-			pq.push(std::pair<Key<int>, bool>(node, loadedBlock->isLeaf()));
+			pq.push(std::pair<Key<T>, bool>(node, loadedBlock->isLeaf()));
 		}
 		while (pq.top().second && kNN.size() < k) {
 			kNN.push_back(pq.top().first);
@@ -81,13 +85,15 @@ std::vector<Key<int>> RStarTree::kNNSearch(int* min, int* max, int k) {
 	}
 }
 
-void RStarTree::insertData(int* val) {
+template<class T>
+void RStarTree<T>::insertData(T* val, int blockId) {
 	std::unordered_set<int> visitedLevels;
-	Key<int> key(val, INT_MAX, dimensions);
+	Key<T> key(val, blockId, dimensions);
 	insert(key, visitedLevels, INT_MAX);
 }
 
-void RStarTree::insert(Key<int>& val, std::unordered_set<int>& visitedLevels, int level) {
+template<class T>
+void RStarTree<T>::insert(Key<T>& val, std::unordered_set<int>& visitedLevels, int level) {
 
 	auto result = chooseSubtree(val, level);
 
@@ -112,7 +118,7 @@ void RStarTree::insert(Key<int>& val, std::unordered_set<int>& visitedLevels, in
 			auto parentForRightBlock = overflowTreatment(node, visitedLevels);
 			if (parentForRightBlock != nullptr) {
 				if (i == -1) {
-					std::shared_ptr<RStarTreeNode> parentBlock = std::shared_ptr<RStarTreeNode>(new RStarTreeNode(dimensions, false, nextBlockId));
+					std::shared_ptr<RStarTreeNode<T>> parentBlock = std::shared_ptr<RStarTreeNode<T>>(new RStarTreeNode<T>(dimensions, false, nextBlockId));
 					parentBlock->insert(*node->getBoundingBox());
 					parentBlock->insert(*parentForRightBlock);
 					data.SaveBlock(parentBlock->getBlockId(), parentBlock->getRawData().get());
@@ -147,11 +153,12 @@ void RStarTree::insert(Key<int>& val, std::unordered_set<int>& visitedLevels, in
 
 }
 
-std::unique_ptr<Key<int>> RStarTree::overflowTreatment(std::shared_ptr<RStarTreeNode> node, std::unordered_set<int>& visitedLevels) {
+template<class T>
+std::unique_ptr<Key<T>> RStarTree<T>::overflowTreatment(std::shared_ptr<RStarTreeNode<T>> node, std::unordered_set<int>& visitedLevels) {
 	if (node->level != 0 && visitedLevels.find(node->level) == visitedLevels.end()) {
 		visitedLevels.insert(node->level);
 		reInsert(node, visitedLevels);
-		return std::unique_ptr<Key<int>>();
+		return std::unique_ptr<Key<T>>();
 	} else {
 		auto rightBlock = node->split();
 		data.SaveBlock(node->getBlockId(), node->getRawData().get());
@@ -162,18 +169,19 @@ std::unique_ptr<Key<int>> RStarTree::overflowTreatment(std::shared_ptr<RStarTree
 	}
 }
 
-void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node, std::unordered_set<int>& visitedLevels) {
+template<class T>
+void RStarTree<T>::reInsert(std::shared_ptr<RStarTreeNode<T>> node, std::unordered_set<int>& visitedLevels) {
 	auto bb = node->getBoundingBox();
 
 
-	std::sort(node->begin(), node->end(), [&](Key<int> a, Key<int> b) {
+	std::sort(node->begin(), node->end(), [&](Key<T> a, Key<T> b) {
 		return bb->distanceFromRectCenter(a) < bb->distanceFromRectCenter(b);
 	});
 
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
+	int M = BLOCK_SIZE / Key<T>::GetKeySize(dimensions);
 	int p = 0.3 * M;
 
-	std::vector<Key<int>> deletedNodes;
+	std::vector<Key<T>> deletedNodes;
 	deletedNodes.assign(node->end() - p, node->end());
 	node->getKeys().erase(node->end() - p, node->end());
 
@@ -187,20 +195,22 @@ void RStarTree::reInsert(std::shared_ptr<RStarTreeNode> node, std::unordered_set
 
 }
 
-std::unique_ptr<RStarTreeNode> RStarTree::loadBlock(int blockId) {
+template<class T>
+std::unique_ptr<RStarTreeNode<T>> RStarTree<T>::loadBlock(int blockId) {
 	char* loadedData = new char[BLOCK_SIZE];
 	data.ReadBlock(blockId, loadedData);
 
 	bool leaf = *(int*)loadedData == 1;
 	
-	auto ptr = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(loadedData + 4, dimensions, leaf, blockId));
+	auto ptr = std::unique_ptr<RStarTreeNode<T>>(new RStarTreeNode<T>(loadedData + 4, dimensions, leaf, blockId));
 	delete[] loadedData;
 	return ptr;
 }
 
-InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) {
+template<class T>
+InsertionNodeContext<T> RStarTree<T>::chooseSubtree(Key<T>& val, int requiredLevel) {
 
-	std::vector<std::shared_ptr<RStarTreeNode>> blockPath;
+	std::vector<std::shared_ptr<RStarTreeNode<T>>> blockPath;
 	std::vector<int> keyIndexPath;
 
 	auto N = this->root;
@@ -211,18 +221,18 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 
 		if (N->isLeaf()) {
 			N->level = level;
-			return InsertionNodeContext(N, blockPath, keyIndexPath);
+			return InsertionNodeContext<T>(N, blockPath, keyIndexPath);
 		}
 
 		auto child = loadBlock(N->begin()->blockPtr);
 
-		int minOverlap = INT_MAX;
-		double minAreaEnlargmement = DBL_MAX;
-		double minArea;
-		Key<int>* chosenKey = nullptr;
+		T minOverlap = std::numeric_limits<T>::max();
+		T minAreaEnlargmement = std::numeric_limits<T>::max();
+		T minArea;
+		Key<T>* chosenKey = nullptr;
 
 		if (child->isLeaf()) {
-			std::priority_queue<std::pair<int, Key<int>*>, std::vector<std::pair<int, Key<int>*>>, std::greater<std::pair<int, Key<int>*>>> pq;
+			std::priority_queue<std::pair<T, Key<T>*>, std::vector<std::pair<T, Key<T>*>>, std::greater<std::pair<T, Key<T>*>>> pq; // TODO pointers? Safe?
 			for (auto& node : *N) {
 				pq.push(std::make_pair(node.areaEnlargementRequiredToFit(val), &node));
 			}
@@ -230,12 +240,12 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 			for (int i = 0; i < 32; i++) {
 				auto& A = *pq.top().second;
 				pq.pop();
-				double beforeEnlargementOverlap = N->overlap(A);
+				T beforeEnlargementOverlap = N->overlap(A);
 				auto enlargedKey = A.getEnlargedToFit(val);
-				double afterEnlargementOverlap = N->overlap(*enlargedKey);
-				auto overlapEnlargement = afterEnlargementOverlap - beforeEnlargementOverlap;
-				double areaEnlargmement = A.areaEnlargementRequiredToFit(val);
-				double area = A.areaValue();
+				T afterEnlargementOverlap = N->overlap(*enlargedKey);
+				T overlapEnlargement = afterEnlargementOverlap - beforeEnlargementOverlap;
+				T areaEnlargmement = A.areaEnlargementRequiredToFit(val);
+				T area = A.areaValue();
 				if (overlapEnlargement == minOverlap) {
 					if (areaEnlargmement < minAreaEnlargmement) {
 						minArea = area;
@@ -265,7 +275,7 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 		if (!child->isLeaf()) {
 			for (auto& node : *N) {
 				auto areaEnlargmentRequired = node.areaEnlargementRequiredToFit(val);
-				double area = node.areaValue();
+				T area = node.areaValue();
 				if (areaEnlargmentRequired == minOverlap && area < minArea) {
 					minArea = area;
 					minAreaEnlargmement = areaEnlargmentRequired;
@@ -279,13 +289,20 @@ InsertionNodeContext RStarTree::chooseSubtree(Key<int>& val, int requiredLevel) 
 			}
 		}
 		blockPath.push_back(N);
-		keyIndexPath.push_back(std::distance(N->begin(), std::find(N->begin(), N->end(), *chosenKey)));
+		auto end = std::find(N->begin(), N->end(), *chosenKey);
+		auto distance = std::distance(N->begin(), end);
+		keyIndexPath.push_back(distance);
 		N = this->loadBlock(chosenKey->blockPtr);
 		level++;
 		if (requiredLevel == level) {
-			return InsertionNodeContext(N, blockPath, keyIndexPath);;
+			return InsertionNodeContext<T>(N, blockPath, keyIndexPath);;
 		}
 		continue;
 	}
 
 }
+
+// Tell the compiler for what types to compile the class.
+template class RStarTree<int>;
+template class RStarTree<float>;
+template class RStarTree<double>;

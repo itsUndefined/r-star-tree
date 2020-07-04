@@ -4,34 +4,36 @@
 
 using namespace RStar;
 
-RStarTreeNode::RStarTreeNode(int dimensions, int leaf, int blockId) {
+template<class T>
+RStarTreeNode<T>::RStarTreeNode(int dimensions, int leaf, int blockId) {
 	this->leaf = leaf;
 	this->dimensions = dimensions;
 	this->blockId = blockId;
 }
 
-
-RStarTreeNode::RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<Key<int>>::iterator end, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
+template<class T>
+RStarTreeNode<T>::RStarTreeNode(typename std::vector<Key<T>>::iterator begin, typename std::vector<Key<T>>::iterator end, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
 	this->data.assign(begin, end);
 }
 
-RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
-	for (int i = 0; i < BLOCK_SIZE / Key<int>::GetKeySize(dimensions); i++) {
-		int* min = (int*)(diskData + i * Key<int>::GetKeySize(dimensions));
-		if (min[0] == INT_MAX) {
+template<class T>
+RStarTreeNode<T>::RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
+	for (int i = 0; i < BLOCK_SIZE / Key<T>::GetKeySize(dimensions); i++) {
+		T* min = (T*)(diskData + i * Key<T>::GetKeySize(dimensions));
+		if (*(int*)min == INT_MAX) {
 			break;
 		}
-		int leftBlockPtr = *(int*)(diskData + i * Key<int>::GetKeySize(dimensions) + 2 * dimensions * sizeof(int));
+		int leftBlockPtr = *(int*)(diskData + i * Key<T>::GetKeySize(dimensions) + 2 * dimensions * sizeof(T));
 		if (!leaf) {
-			int* max = (int*)(diskData + i * Key<int>::GetKeySize(dimensions) + dimensions * sizeof(int));
-			this->data.push_back(Key<int>(
+			T* max = (T*)(diskData + i * Key<T>::GetKeySize(dimensions) + dimensions * sizeof(T));
+			this->data.push_back(Key<T>(
 				min,
 				max,
 				leftBlockPtr,
 				dimensions
 			));
 		} else {
-			this->data.push_back(Key<int>(
+			this->data.push_back(Key<T>(
 				min,
 				leftBlockPtr,
 				dimensions
@@ -46,12 +48,14 @@ RStarTreeNode::RStarTreeNode(char* diskData, int dimensions, int leaf, int block
 	*/
 }
 
-void RStarTreeNode::insert(RStar::Key<int>& key) {
+template<class T>
+void RStarTreeNode<T>::insert(RStar::Key<T>& key) {
 	this->data.push_back(key);
 }
 
-double RStar::RStarTreeNode::overlap(RStar::Key<int>& key) {
-	double overlapArea = 0.0;
+template<class T>
+T RStarTreeNode<T>::overlap(RStar::Key<T>& key) {
+	T overlapArea = 0;
 	for (auto& node : *this) {
 		if (node.blockPtr == key.blockPtr) {
 			continue;
@@ -61,17 +65,20 @@ double RStar::RStarTreeNode::overlap(RStar::Key<int>& key) {
 	return overlapArea;
 }
 
-bool RStarTreeNode::isLeaf() {
+template<class T>
+bool RStarTreeNode<T>::isLeaf() {
 	return this->leaf;
 }
 
-bool RStarTreeNode::isFull() {
-	return this->data.size() == BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
+template<class T>
+bool RStarTreeNode<T>::isFull() {
+	return this->data.size() == BLOCK_SIZE / Key<T>::GetKeySize(dimensions);
 }
 
-std::unique_ptr<Key<int>> RStarTreeNode::getBoundingBox() {
-	int* min = new int[dimensions];
-	int* max = new int[dimensions];
+template<class T>
+std::unique_ptr<Key<T>> RStarTreeNode<T>::getBoundingBox() {
+	T* min = new T[dimensions];
+	T* max = new T[dimensions];
 	std::fill_n(min, dimensions, INT_MAX);
 	std::fill_n(max, dimensions, INT_MIN);
 
@@ -79,48 +86,53 @@ std::unique_ptr<Key<int>> RStarTreeNode::getBoundingBox() {
 		for (int i = 0; i < dimensions; i++) {
 			if (key.min[i] < min[i]) {
 				min[i] = key.min[i];
-			} else if (key.max[i] > max[i]) {
+			} 
+			if (key.max[i] > max[i]) {
 				max[i] = key.max[i];
 			}
 		}
 	}
 
-	return std::unique_ptr<Key<int>>(new Key<int>(min, max, blockId, dimensions));
+	return std::unique_ptr<Key<T>>(new Key<T>(min, max, blockId, dimensions));
 }
 
-std::unique_ptr<Key<int>> RStarTreeNode::getBoundingBox(int start, int end) {
-	int* min = new int[dimensions];
-	int* max = new int[dimensions];
+template<class T>
+std::unique_ptr<Key<T>> RStarTreeNode<T>::getBoundingBox(int start, int end) {
+	T* min = new T[dimensions];
+	T* max = new T[dimensions];
 	std::fill_n(min, dimensions, INT_MAX);
 	std::fill_n(max, dimensions, INT_MIN);
+
+	if (start == end) {
+		return std::unique_ptr<Key<T>>();
+	}
 
 	for (int i = start; i < end; i++) {
 		for (int j = 0; j < dimensions; j++) {
 			if (this->data[i].min[j] < min[j]) {
 				min[j] = this->data[i].min[j];
 			}
-			else if (this->data[i].max[j] > max[j]) {
+			if (this->data[i].max[j] > max[j]) {
 				max[j] = this->data[i].max[j];
 			}
 		}
 	}
 
-	return std::unique_ptr<Key<int>>(new Key<int>(min, max, blockId, dimensions));
+	return std::unique_ptr<Key<T>>(new Key<T>(min, max, blockId, dimensions));
 }
 
-std::unique_ptr<char[]> RStarTreeNode::getRawData() {
+template<class T>
+std::unique_ptr<char[]> RStarTreeNode<T>::getRawData() {
 	auto blockBinaryContent = std::unique_ptr<char[]>(new char[BLOCK_SIZE]);
 	int* dataPtr = (int*) blockBinaryContent.get();
 	*dataPtr = isLeaf() ? 1 : 0;
 	dataPtr += 1;
 
 	for (auto it = this->data.begin(); it != this->data.end(); it++) {
-		std::copy(it->min, it->min + dimensions, dataPtr);
-		dataPtr += dimensions;
-		if (it->max != nullptr) {
-			std::copy(it->max, it->max + dimensions, dataPtr);
-		}
-		dataPtr += dimensions;
+		std::copy(it->min, it->min + dimensions, (T*)dataPtr);
+		dataPtr = (int*)((T*)dataPtr + dimensions);
+		std::copy(it->max, it->max + dimensions, (T*)dataPtr);
+		dataPtr = (int*)((T*)dataPtr + dimensions);
 		*dataPtr = it->blockPtr;
 		dataPtr += 1;
 	}
@@ -130,49 +142,57 @@ std::unique_ptr<char[]> RStarTreeNode::getRawData() {
 	return blockBinaryContent;
 }
 
-std::unique_ptr<RStarTreeNode> RStarTreeNode::split() {
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
+template<class T>
+std::unique_ptr<RStarTreeNode<T>> RStarTreeNode<T>::split() {
+	int M = BLOCK_SIZE / Key<T>::GetKeySize(dimensions);
 	int m = 0.4 * M;
 
 	int axis = chooseSplitAxis();
 	int index = chooseSplitIndex(axis);
 	if (index < M - 2 * m + 2) {
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[axis] < b.min[axis]; });
+		std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.min[axis] < b.min[axis]; });
 	} else {
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[axis] < b.max[axis]; });
+		std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.max[axis] < b.max[axis]; });
 		index -= M - 2 * m + 2;
 	}
 
-	std::unique_ptr<RStarTreeNode> rightBlock = std::unique_ptr<RStarTreeNode>(new RStarTreeNode(this->data.begin() + m + index, this->data.end(), dimensions, leaf, INT_MAX));
+	std::unique_ptr<RStarTreeNode<T>> rightBlock = std::unique_ptr<RStarTreeNode<T>>(new RStarTreeNode<T>(this->data.begin() + m + index, this->data.end(), dimensions, leaf, INT_MAX));
 	this->data.erase(this->data.begin() + m + index, this->data.end());
 
 	return rightBlock;
 }
 
-int RStarTreeNode::chooseSplitAxis() {
-	double minSum = std::numeric_limits<double>::max();
+template<class T>
+int RStarTreeNode<T>::chooseSplitAxis() {
+	T minSum = std::numeric_limits<T>::max();
 	int axis = 0;
 
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
+	int M = BLOCK_SIZE / Key<T>::GetKeySize(dimensions);
 	int m = 0.4 * M;
 
 	for (int i = 0; i < dimensions; i++) {
 
-		double marginSum = 0;
+		T marginSum = 0;
 
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int>& a, Key<int>& b) {
+		std::sort(this->data.begin(), this->data.end(), [&](Key<T>& a, Key<T>& b) {
 			return a.min[i] < b.min[i]; 
 		});
 		for (int k = 0; k < M - 2 * m + 2; k++) {
 			auto bbFirstGroup = getBoundingBox(0, m + k);
 			auto bbSecondGroup = getBoundingBox(m + k, M + 1);
+			if (!bbFirstGroup || !bbSecondGroup) {
+				continue;
+			}
 			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
 		}
 
-		std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[i] < b.max[i]; });
+		std::sort(this->data.begin(), this->data.end(), [&](Key<T>& a, Key<T>& b) { return a.max[i] < b.max[i]; });
 		for (int k = 0; k < M - 2 * m + 2; k++) {
 			auto bbFirstGroup = getBoundingBox(0, m + k);
 			auto bbSecondGroup = getBoundingBox(m + k, M + 1);
+			if (!bbFirstGroup || !bbSecondGroup) {
+				continue;
+			}
 			marginSum += bbFirstGroup->marginValue() + bbSecondGroup->marginValue();
 		}
 
@@ -185,21 +205,25 @@ int RStarTreeNode::chooseSplitAxis() {
 	return axis;
 }
 
-int RStarTreeNode::chooseSplitIndex(int axis) {
+template<class T>
+int RStarTreeNode<T>::chooseSplitIndex(int axis) {
 
-	int M = BLOCK_SIZE / Key<int>::GetKeySize(dimensions);
+	int M = BLOCK_SIZE / Key<T>::GetKeySize(dimensions);
 	int m = 0.4 * M;
 
-	double minOverlap = std::numeric_limits<double>::max();
-	double minArea = std::numeric_limits<double>::max();
+	T minOverlap = std::numeric_limits<T>::max();
+	T minArea = std::numeric_limits<T>::max();
 	int index = 0;
 
-	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.min[axis] < b.min[axis]; });
+	std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.min[axis] < b.min[axis]; });
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k, M + 1);
+		if (!bbFirstGroup || !bbSecondGroup) {
+			continue;
+		}
 		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
-		double area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
+		T area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
 
 		if (overlap == minOverlap && area < minArea) {
 			minArea = area;
@@ -214,12 +238,15 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 		}
 	}
 
-	std::sort(this->data.begin(), this->data.end(), [&](Key<int> a, Key<int> b) { return a.max[axis] < b.max[axis]; });
+	std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.max[axis] < b.max[axis]; });
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k, M + 1);
+		if (!bbFirstGroup || !bbSecondGroup) {
+			continue;
+		}
 		auto overlap = bbFirstGroup->intersectArea(*bbSecondGroup);
-		double area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
+		T area = bbFirstGroup->areaValue() + bbSecondGroup->areaValue();
 
 		if (overlap == minOverlap && area < minArea) {
 			minArea = area;
@@ -235,3 +262,8 @@ int RStarTreeNode::chooseSplitIndex(int axis) {
 	}
 	return index;
 }
+
+// Tell the compiler for what types to compile the class.
+template class RStarTreeNode<int>;
+template class RStarTreeNode<float>;
+template class RStarTreeNode<double>;

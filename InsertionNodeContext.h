@@ -5,18 +5,20 @@
 #include "RStarTreeNode.h"
 
 namespace RStar {
+
+	template<class T>
 	class InsertionNodeContext
 	{
 	public:
 
-		InsertionNodeContext(std::shared_ptr<RStarTreeNode> optimalNode, std::vector<std::shared_ptr<RStarTreeNode>> blockPath, std::vector<int> keyIndexPath) {
+		InsertionNodeContext(std::shared_ptr<RStarTreeNode<T>>& optimalNode, std::vector<std::shared_ptr<RStarTreeNode<T>>>& blockPath, std::vector<int>& keyIndexPath) {
 			this->optimalNode = optimalNode; // TODO Move instead of assign for better performance
 			this->blockPath = blockPath;
 			this->keyIndexPath = keyIndexPath;
 		}
 
-		std::shared_ptr<RStarTreeNode> optimalNode;
-		std::vector<std::shared_ptr<RStarTreeNode>> blockPath;
+		std::shared_ptr<RStarTreeNode<T>> optimalNode;
+		std::vector<std::shared_ptr<RStarTreeNode<T>>> blockPath;
 		std::vector<int> keyIndexPath;
 	};
 }

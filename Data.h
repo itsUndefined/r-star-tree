@@ -2,6 +2,7 @@
 
 #include "File.h"
 #include "vector"
+#include "RStarTree.h"
 
 
 enum class ColumnType {
@@ -47,6 +48,7 @@ public:
 
 private:
 	File data;
+	RStarTree<float> index;
 	std::vector<Column> columns;
 	int rowSize = 0;
 	std::unique_ptr<char[]> currentBlockForWrite;

@@ -35,7 +35,7 @@ int File::GetBlockCount() {
 	
 	LARGE_INTEGER fileSize;
 	GetFileSizeEx(hFile, &fileSize);
-	return fileSize.QuadPart / BLOCK_SIZE;
+	return (int) (fileSize.QuadPart / BLOCK_SIZE);
 	
 }
 

@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-Data::Data() : data(L"data.bin") {
+Data::Data() : data(L"data.bin"), index(2) {
 	std::fstream metadataFile;
 	metadataFile.open("data_metadata.bin", std::ios::binary | std::ios::in | std::ios::out);
 	
@@ -55,7 +55,6 @@ Data::Data() : data(L"data.bin") {
 		currentBlockId++;
 		currentIndexAvailableForWrite = 0;
 	}
-	
 
 }
 
@@ -97,6 +96,7 @@ void Data::InsertRow(std::unique_ptr<char[]> insertingData) {
 		currentIndexAvailableForWrite++;
 	}
 	data.SaveBlock(currentBlockId, currentBlockForWrite.get());
+	index.insertData((float*)(insertingData.get() + rowSize - 8), currentBlockId);
 
 	if (currentIndexBeforeUpdate == BLOCK_SIZE / rowSize - 1) {
 		currentIndexAvailableForWrite = 0;
@@ -147,7 +147,7 @@ Data::RecordBuilder& Data::RecordBuilder::InsertCharN(std::wstring data) {
 		std::cerr << "Invalid insertion. Attempted to insert string that doesn't fit in column" << std::endl;
 		throw;
 	}
-	int writeSize;
+	size_t writeSize;
 	if (data.size() < this->nextColumn->parameter) {
 		writeSize = data.size() + 1;
 	} else {

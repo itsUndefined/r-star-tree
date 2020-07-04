@@ -5,7 +5,7 @@
 #include <fstream>
 #include <Windows.h>
 
-constexpr int BLOCK_SIZE = 104; //Must be multiple of sizeof(T)
+constexpr int BLOCK_SIZE = 44; //Must be multiple of sizeof(T) // was 104
 
 class File
 {
