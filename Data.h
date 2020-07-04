@@ -23,9 +23,13 @@ class Data
 
 	public:
 		RecordBuilder(Data* data);
+		// inserts an integer to the memory
 		RecordBuilder& InsertInteger(int data);
+		// inserts a float to the memory
 		RecordBuilder& InsertFloat(float data);
+		// insret a char to the memory
 		RecordBuilder& InsertCharN(std::wstring data);
+		// create a file from the data that is to the memory (InsertInteger, InsertFloat, InsertCharN)
 		void BuildAndSave();
 	private:
 		Data* data;

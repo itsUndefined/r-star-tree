@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
+// this class creates a data, that data can be a point or rectangle
 namespace RStar {
 	template<class T>
 	class Key {
@@ -16,6 +17,7 @@ namespace RStar {
 			blockPtr = 666;
 		}
 
+		// return the the sieze of the key
 		static int GetKeySize(int dimensions) {
 			return sizeof(int) + dimensions * 2 * sizeof(int);
 		}
@@ -89,6 +91,7 @@ namespace RStar {
 			}
 		}
 
+		// checks if a rectangle overlaps with another rectangle
 		bool overlaps(Key<T>& key) {
 			for (int i = 0; i < size; i++) {
 				if (
@@ -103,6 +106,7 @@ namespace RStar {
 			return true;
 		}
 
+		// return the area that the rectangle must expand inorder to fit
 		double areaEnlargementRequiredToFit(Key<T>& key) {
 			double thisArea = 1;
 			for (int i = 0; i < size; i++) {
@@ -125,6 +129,7 @@ namespace RStar {
 			return expandedArea - thisArea;
 		}
 
+		// returns the expanded rectangle
 		std::unique_ptr<Key<T>> getEnlargedToFit(Key<T>& key) {
 			std::unique_ptr<Key<T>> enlarged(new Key<T>(this->min, this->max, this->blockPtr, this->size));
 
@@ -139,6 +144,7 @@ namespace RStar {
 			return enlarged;
 		}
 
+		// expands the rectangle
 		void enlargeToFit(Key<T>& key) {
 			for (int i = 0; i < size; i++) {
 				if (key.min[i] < this->min[i]) {
@@ -150,6 +156,7 @@ namespace RStar {
 			}
 		}
 
+		// return the intersect area between two rectangles
 		double intersectArea(Key<T>& key) {
 			double intersectingArea = 1;
 			for (int i = 0; i < size; i++) {
@@ -162,6 +169,7 @@ namespace RStar {
 			return intersectingArea;
 		}
 
+		// return the destance from the center of the rectangle
 		double distanceFromRectCenter(Key<T>& key) {
 			double distanceSqr = 0;
 			for (int i = 0; i < size; i++) {
@@ -173,6 +181,7 @@ namespace RStar {
 			return std::sqrt(distanceSqr);
 		}
 
+		// return the margin value of the rectangle
 		double marginValue() {
 			double sum = 0;
 			for (int i = 0; i < size; i++) {
@@ -181,6 +190,7 @@ namespace RStar {
 			return sum;
 		}
 
+		// return the distance from the rectangle edge
 		double distanceFromEdge(Key<T>& key) {
 			double distance = 0;
 			for (int i = 0; i < size; i++) {
@@ -192,6 +202,7 @@ namespace RStar {
 			return std::sqrt(distance);
 		}
 
+		// return the area value of the rectangle
 		double areaValue() {
 			double val = 1;
 			for (int i = 0; i < size; i++) {
@@ -213,20 +224,28 @@ namespace RStar {
 	};
 
 	
-
+	// the class creates a node for the data structure of R*Tree
 	class RStarTreeNode
 	{
 	public:
 		RStarTreeNode(int dimensions, int leaf, int blockId);
 		RStarTreeNode(std::vector<Key<int>>::iterator begin, std::vector<Key<int>>::iterator end, int dimensions, int leaf, int blockId);
 		RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId);
+		// insert a data or node thge the node
 		void insert(Key<int>& key);
+		// implements Split Algorithm
 		std::unique_ptr<RStarTreeNode> split();
+		// checks if a rectangle overlap another rectangle
 		double overlap(Key<int>& key);
+		// checks if a node is a leaf
 		bool isLeaf();
+		// checks if a node is full
 		bool isFull();
+		// returns the bounding rectangle of rectangles
 		std::unique_ptr<Key<int>> getBoundingBox();
+		// returns the bounding rectangle of rectangles starting from a specific entry and ending to another entry
 		std::unique_ptr<Key<int>> getBoundingBox(int start, int end);
+		// returns the block id
 		int getBlockId() { return blockId; }
 		
 
@@ -244,7 +263,9 @@ namespace RStar {
 
 		int level = 0;
 	private:
+		// implements ChooseSplitAxis Algorithm
 		int chooseSplitAxis();
+		// implements ChooseSplitIndex Algorithm
 		int chooseSplitIndex(int axis);
 		
 		bool leaf;
