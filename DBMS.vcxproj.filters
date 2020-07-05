@@ -70,13 +70,13 @@
     <None Include="data_metadata.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="rtree.bin">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="rtree_metadata.bin">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="map.osm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="rtree.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

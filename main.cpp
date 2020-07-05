@@ -7,7 +7,11 @@
 
 #include <io.h>
 #include <fcntl.h>
+#include <codecvt>
 
+#include <mongocxx/instance.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/uri.hpp>
 
 int main() {
 	_setmode(_fileno(stdout), _O_U16TEXT);
@@ -66,23 +70,109 @@ int main() {
 	return 0;
 	*/
 
+
+
 	/*
-	Data data;
-	data.PrintData();
-
-
 	data.GetRecordBuilder()
 		.InsertInteger(16)
 		.InsertFloat(0.3f)
 		.InsertFloat(0.4f)
 		.InsertCharN(L"dddd")
 		.BuildAndSave();
+		*/
+
+
+
+	mongocxx::instance instance{}; // This should be done only once.
+	mongocxx::client client{ mongocxx::uri{"mongodb://localhost:27017"} };
+
+	mongocxx::collection nodes = client["openstreetmaps"]["nodes"];
+
+	mongocxx::options::find options;
+	options.no_cursor_timeout(true);
+	//options.max
+
+	mongocxx::cursor cursor = nodes.find({}, options);
+
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+
+
+	int i = 0;
+
+	Data data;
+
+	/*
+	auto it = cursor.begin();
+	
+	while(it != cursor.end()) {
+		auto& record = *it;
+		auto node = record.find("node")->get_document().view();
+		std::string id = node.find("@id")->get_utf8().value.to_string();
+		std::string lat = node.find("@lat")->get_utf8().value.to_string();
+		std::string lon = node.find("@lon")->get_utf8().value.to_string();
+		int fId = std::stoi(id);
+		float fLat = std::stof(lat);
+		float fLon = std::stof(lon);
+		boost::string_view name;
+		if (node.find("tag") != node.end()) {
+			if (node.find("tag")->type() == bsoncxx::type::k_array) {
+				for (auto& tag : node.find("tag")->get_array().value) {
+					if (tag.get_document().view().find("@k")->get_utf8().value.to_string() == "name") {
+						name = tag.get_document().view().find("@v")->get_utf8().value;
+						break;
+					}
+				}
+			} else {
+				auto tag = *node.find("tag");
+				if (tag.get_document().view().find("@k")->get_utf8().value.to_string() == "name") {
+					name = tag.get_document().view().find("@v")->get_utf8().value;
+					break;
+				}
+			}
+			
+		}
+		
+
+		std::wstring fName;
+
+		if (name.length()) {
+			fName = convert.from_bytes(name.begin());
+		}
+
+	
+		data.GetRecordBuilder()
+			.InsertInteger(fId)
+			.InsertCharN(fName)
+			.InsertFloat(fLat)
+			.InsertFloat(fLon)
+			.BuildAndSave();
+
+
+		if (i % 10000 == 0) {
+			std::wcout << (i / 1173000000.0) * 100 << L"% complete" << std::endl;
+		}
+
+		if (i == 3) {
+			break;
+		}
+
+		i++;
+
+		it++;
+		if (it == cursor.end()) {
+			cursor.begin();
+		}
+	}
+
+
+	std::wcout << L"Cursor exited" << std::endl;
 
 	*/
 
 
-	RStarTree<int> magicBoy(2);
-	int input[2] = { 3, 3 };
+
+	//RStarTree<int> magicBoy(2);
+	//int input[2] = { 3, 3 };
 	//magicBoy.insertData(input);
 	
 	
@@ -93,6 +183,12 @@ int main() {
 		magicBoy.insertData(input);
 	}
 	*/
+
+
+	
+	float min[2] = { 59.76, 30.32 };
+	float max[2] = { 59.775, 30.33 };
+	data.KNNSearch(min, 4, true);
 
 
 

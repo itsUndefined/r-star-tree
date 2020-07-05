@@ -1,6 +1,7 @@
 ﻿#include "Data.h"
 #include <fstream>
 #include <iostream>
+#include <queue>
 
 Data::Data() : data(L"data.bin"), index(2) {
 	std::fstream metadataFile;
@@ -15,7 +16,7 @@ Data::Data() : data(L"data.bin"), index(2) {
 
 		if (columnType == ColumnType::CHAR) {
 			unsigned int charLength = 0;
-			metadataFile.read((char*)&charLength, 2);
+			metadataFile.read((char*)&charLength, 1);
 
 			columns.push_back({ ColumnType::CHAR, charLength });
 		}
@@ -58,28 +59,26 @@ Data::Data() : data(L"data.bin"), index(2) {
 
 }
 
-void Data::PrintData() {
-	std::unique_ptr<char> tempData(new char[512]);
-	int position = 0;
-	data.ReadBlock(1, tempData.get());
+void Data::PrintData(const char* block, int index) {
+	int position = index * rowSize;
 
 	for (auto& column : columns) {
 		if (column.type == ColumnType::INTEGER) {
-			int i = *(int*)(tempData.get() + position);
+			int i = *(int*)(block + position);
 			std::wcout << "integer: " << i << std::endl;
 			position += sizeof(int);
 			continue;
 		}
 	
 		if (column.type == ColumnType::FLOAT) {
-			float f = *(float*)(tempData.get() + position);
+			float f = *(float*)(block + position);
 			std::wcout << "float: " << f << std::endl;
 			position += sizeof(float);
 			continue;
 		}
 		
 		if (column.type == ColumnType::CHAR) {
-			std::wstring s((wchar_t*)(tempData.get() + position), column.parameter);
+			std::wstring s((wchar_t*)(block + position), column.parameter);
 			std::wcout << "string: " << s.c_str() << std::endl;
 			position += column.parameter * sizeof(wchar_t);
 			continue;
@@ -102,6 +101,108 @@ void Data::InsertRow(std::unique_ptr<char[]> insertingData) {
 		currentIndexAvailableForWrite = 0;
 		currentBlockId++;
 	}
+}
+
+void Data::RangeSearch(float* min, float* max, bool withIndex) {
+	
+	char* dataOut = new char[BLOCK_SIZE];
+
+	if (withIndex) {
+		auto keys = index.rangeSearch(min, max);
+		for (auto& key : keys) {
+
+			data.ReadBlock(key.blockPtr, dataOut);
+
+			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
+				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
+				if (key.min[0] == x && key.min[1] == y) {
+					PrintData(dataOut, i / rowSize);
+					break;
+				}
+			}
+
+		}
+	}
+
+	if (!withIndex) {
+		for (int blockId = 1; blockId <= currentBlockId; blockId++) {
+			data.ReadBlock(blockId, dataOut);
+			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
+				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
+				if (min[0] < x && x < max[0] && min[1] < y && y < max[1]) {
+					PrintData(dataOut, i / rowSize);
+				}
+			}
+		}
+	}
+
+	delete[] dataOut;
+}
+
+void Data::KNNSearch(float* point, int k, bool withIndex) {
+	char* dataOut = new char[BLOCK_SIZE];
+
+	if (withIndex) {
+		auto keys = index.kNNSearch(point, k);
+		for (auto& key : keys) {
+
+			data.ReadBlock(key.blockPtr, dataOut);
+
+			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
+				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
+				if (key.min[0] == x && key.min[1] == y) {
+					PrintData(dataOut, i / rowSize);
+					break;
+				}
+			}
+
+		}
+	}
+
+	if (!withIndex) {
+		RStar::Key<float> fromPoint(point, INT_MAX, 2);
+
+		typedef std::pair<RStar::Key<float>, std::unique_ptr<char[]>> Pair;
+
+		std::priority_queue<Pair, std::vector<Pair>, std::function<bool(Pair&, Pair&)>> pq([&](Pair& a, Pair& b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
+
+		for (int blockId = 1; blockId <= currentBlockId; blockId++) {
+			data.ReadBlock(blockId, dataOut);
+			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				float dims[2];
+				dims[0] = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
+				dims[1] = *(float*)(dataOut + i + rowSize - sizeof(float));
+
+
+				RStar::Key<float> currentKey(dims, INT_MAX, 2);
+				
+				if (pq.size() == k) {
+					auto& farKey = pq.top().first;
+					if (farKey.distanceFromEdge(fromPoint) > currentKey.distanceFromEdge(fromPoint)) {
+						pq.pop();
+						std::unique_ptr<char[]> rowData(new char[rowSize]);
+						std::copy(dataOut + i, dataOut + i + rowSize, rowData.get());
+						pq.emplace(std::move(currentKey), std::move(rowData));
+					}
+				} else {
+					std::unique_ptr<char[]> rowData(new char[rowSize]);
+					std::copy(dataOut + i, dataOut + i + rowSize, rowData.get());
+					pq.emplace(std::move(currentKey), std::move(rowData));
+				}
+
+			}
+		}
+
+		while (!pq.empty()) {
+			PrintData(pq.top().second.get(), 0);
+			pq.pop();
+		}
+	}
+
+	delete[] dataOut;
 }
 
 Data::RecordBuilder Data::GetRecordBuilder() {

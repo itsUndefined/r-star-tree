@@ -49,17 +49,15 @@ namespace RStar {
 			this->size = source.size;
 		}
 
-		/*
 		Key(Key<T>&& source) {
 			this->min = source.min;
 			this->max = source.max;
-			this->leftBlockPtr = source.leftBlockPtr;
+			this->blockPtr = source.blockPtr;
 			this->size = source.size;
 
 			source.min = nullptr;
 			source.max = nullptr;
 		}
-		*/
 
 		Key<T>& operator=(const Key<T>& source) {
 			this->min = new T[source.size];
@@ -192,7 +190,7 @@ namespace RStar {
 		}
 
 		// return the distance from the rectangle edge
-		double distanceFromEdge(Key<T>& key) {
+		double distanceFromEdge(Key<T>& key) const {
 			double distance = 0;
 			for (int i = 0; i < size; i++) {
 				T point = key.max[i] + key.min[i];

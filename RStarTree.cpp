@@ -10,6 +10,15 @@ template<class T>
 RStarTree<T>::RStarTree(int dimensions): data(L"rtree.bin") {
 	auto blockCount = data.GetBlockCount();
 
+	if (blockCount == 1) {
+		char* tempBuffer = new char[BLOCK_SIZE];
+		data.ReadBlock(1, tempBuffer);
+		if (*(int*)tempBuffer == INT_MAX) {
+			*(int*)tempBuffer = 1;
+			data.SaveBlock(1, tempBuffer);
+		}
+	}
+
 	this->nextBlockId = blockCount + 1;
 
 	std::fstream metadataFile;
@@ -45,10 +54,14 @@ std::vector<Key<T>> RStarTree<T>::search(Key<T>& rangeSearch, std::shared_ptr<RS
 	std::vector<Key<T>> list;
 	if (block->isLeaf()) {
 		for (auto& point : *block) {
+			bool inRange = true;
 			for (int i = 0; i < dimensions; i++) {
-				if (rangeSearch.min[i] < point.min[i] && rangeSearch.max[i] > point.min[i]) {
-					list.push_back(point);
+				if (rangeSearch.min[i] > point.min[i] || rangeSearch.max[i] < point.min[i]) {
+					inRange = false;
 				}
+			}
+			if (inRange) {
+				list.push_back(point);
 			}
 		}
 
@@ -63,18 +76,18 @@ std::vector<Key<T>> RStarTree<T>::search(Key<T>& rangeSearch, std::shared_ptr<RS
 }
 
 template<class T>
-std::vector<Key<T>> RStarTree<T>::kNNSearch(T* min, T* max, int k) {
+std::vector<Key<T>> RStarTree<T>::kNNSearch(T* point, int k) {
 	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
-	Key<T> fromPoint(min, max, INT_MAX, dimensions);
+	Key<T> fromPoint(point, INT_MAX, dimensions);
 	std::vector<Key<T>> kNN;
 	kNN.reserve(k);
-	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
+	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) > b.first.distanceFromEdge(fromPoint); });
 	while (true) {
 		for (auto& node : *loadedBlock) {
-			pq.push(std::pair<Key<T>, bool>(node, loadedBlock->isLeaf()));
+			pq.emplace(node, loadedBlock->isLeaf());
 		}
-		while (pq.top().second && kNN.size() < k) {
-			kNN.push_back(pq.top().first);
+		while (!pq.empty() && pq.top().second && kNN.size() < k) {
+			kNN.push_back(std::move(pq.top().first));
 			pq.pop();
 		}
 		if (pq.empty() || kNN.size() == k) {

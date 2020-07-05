@@ -9,6 +9,7 @@ RStarTreeNode<T>::RStarTreeNode(int dimensions, int leaf, int blockId) {
 	this->leaf = leaf;
 	this->dimensions = dimensions;
 	this->blockId = blockId;
+	this->data.reserve(BLOCK_SIZE / Key<T>::GetKeySize(dimensions) + 1);
 }
 
 template<class T>
@@ -26,18 +27,18 @@ RStarTreeNode<T>::RStarTreeNode(char* diskData, int dimensions, int leaf, int bl
 		int leftBlockPtr = *(int*)(diskData + i * Key<T>::GetKeySize(dimensions) + 2 * dimensions * sizeof(T));
 		if (!leaf) {
 			T* max = (T*)(diskData + i * Key<T>::GetKeySize(dimensions) + dimensions * sizeof(T));
-			this->data.push_back(Key<T>(
+			this->data.emplace_back(
 				min,
 				max,
 				leftBlockPtr,
 				dimensions
-			));
+			);
 		} else {
-			this->data.push_back(Key<T>(
+			this->data.emplace_back(
 				min,
 				leftBlockPtr,
 				dimensions
-			));
+			);
 		}
 	}
 

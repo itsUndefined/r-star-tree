@@ -16,7 +16,7 @@ public:
 	// perform a range search query in the R*Tree
 	std::vector<RStar::Key<T>> rangeSearch(T* min, T* max);
 	// perform a k-NN query in the R*Tree
-	std::vector<RStar::Key<T>> kNNSearch(T* min, T* max, int k);
+	std::vector<RStar::Key<T>> kNNSearch(T* min, int k);
 	// inserts data into the R*Tree
 	void insertData(T* val, int blockId);
 
