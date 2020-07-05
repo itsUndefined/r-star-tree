@@ -80,17 +80,24 @@ std::vector<Key<T>> RStarTree<T>::kNNSearch(T* point, int k) {
 	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
 	Key<T> fromPoint(point, INT_MAX, dimensions);
 	std::vector<Key<T>> kNN;
-	kNN.reserve(k);
+	std::priority_queue<Key<T>, std::vector<Key<T>>, std::function<bool(Key<T>&, Key<T>&)>> points([&](Key<T> &a, Key<T> &b) { return a.distanceFromEdge(fromPoint) > b.distanceFromEdge(fromPoint); });
 	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) > b.first.distanceFromEdge(fromPoint); });
 	while (true) {
 		for (auto& node : *loadedBlock) {
 			pq.emplace(node, loadedBlock->isLeaf());
 		}
-		while (!pq.empty() && pq.top().second && kNN.size() < k) {
-			kNN.push_back(std::move(pq.top().first));
+		while (!pq.empty() && pq.top().second) {
+			points.emplace(std::move(pq.top().first));
 			pq.pop();
 		}
-		if (pq.empty() || kNN.size() == k) {
+		if (pq.empty()) {
+			for (int i = 0; i < points.size(); i++) {
+				if (i == k) {
+					break;
+				}
+				kNN.push_back(points.top());
+				points.pop();
+			}
 			return kNN;
 		}
 		loadedBlock = this->loadBlock(pq.top().first.blockPtr);

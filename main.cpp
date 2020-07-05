@@ -9,9 +9,9 @@
 #include <fcntl.h>
 #include <codecvt>
 
-#include <mongocxx/instance.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/uri.hpp>
+//#include <mongocxx/instance.hpp>
+//#include <mongocxx/client.hpp>
+//#include <mongocxx/uri.hpp>
 
 int main() {
 	_setmode(_fileno(stdout), _O_U16TEXT);
@@ -82,7 +82,7 @@ int main() {
 		*/
 
 
-
+	/*
 	mongocxx::instance instance{}; // This should be done only once.
 	mongocxx::client client{ mongocxx::uri{"mongodb://localhost:27017"} };
 
@@ -93,7 +93,7 @@ int main() {
 	//options.max
 
 	mongocxx::cursor cursor = nodes.find({}, options);
-
+	*/
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
 
 
@@ -187,7 +187,7 @@ int main() {
 
 	
 	float min[2] = { 59.76, 30.32 };
-	float max[2] = { 59.775, 30.33 };
+	//float max[2] = { 59.775, 30.33 };
 	data.KNNSearch(min, 4, true);
 
 
