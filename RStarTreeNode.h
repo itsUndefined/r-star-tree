@@ -196,15 +196,24 @@ namespace RStar {
 		}
 
 		// return the distance from the rectangle edge
-		double distanceFromEdge(Key<T>& key) const {
+		double minEdgeDistanceFromPoint(Key<T>& point) const {
 			double distance = 0;
 			for (int i = 0; i < size; i++) {
-				T point = key.max[i] + key.min[i];
-				T rect = this->max[i] + this->min[i];
-
-				distance += std::pow(point - rect, 2);
+				if (point.min[i] > this->min[i] && point.min[i] < this->max[i]) {
+					continue;
+				}
+				
+				distance += std::min(std::abs(this->min[i] - point.min[i]), std::abs(this->max[i] - point.min[i]));
 			}
-			return std::sqrt(distance);
+			return distance;
+		}
+
+		double maxEdgeDistanceFromPoint(Key<T>& point) const {
+			double distance = 0;
+			for (int i = 0; i < size; i++) {
+				distance += std::max(std::abs(this->min[i] - point.min[i]), std::abs(this->max[i] - point.min[i]));
+			}
+			return distance;
 		}
 
 		// return the area value of the rectangle

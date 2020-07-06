@@ -79,13 +79,13 @@ std::vector<Key<T>> RStarTree<T>::search(Key<T>& rangeSearch, std::shared_ptr<RS
 template<class T>
 std::priority_queue<Key<T>,	std::vector<Key<T>>, std::function<bool(Key<T>&, Key<T>&)>> RStarTree<T>::kNNSearch(T* point, int k) {
 	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
-	Key<T> fromPoint(point, INT_MAX, dimensions);
+	std::shared_ptr<Key<T>> fromPoint(new Key<T>(point, INT_MAX, dimensions));
 	std::priority_queue<
 		Key<T>,
 		std::vector<Key<T>>,
 		std::function<bool(Key<T>&, Key<T>&)>
-	> kNN([&](Key<T> &a, Key<T> &b) { return a.distanceFromEdge(fromPoint) < b.distanceFromEdge(fromPoint); });
-	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) > b.first.distanceFromEdge(fromPoint); });
+	> kNN([fromPoint](Key<T> &a, Key<T> &b) { return a.minEdgeDistanceFromPoint(*fromPoint) < b.minEdgeDistanceFromPoint(*fromPoint); });
+	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([fromPoint](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.minEdgeDistanceFromPoint(*fromPoint) > b.first.minEdgeDistanceFromPoint(*fromPoint); });
 	while (true) {
 		for (auto& node : *loadedBlock) {
 			pq.emplace(node, loadedBlock->isLeaf());
@@ -97,19 +97,16 @@ std::priority_queue<Key<T>,	std::vector<Key<T>>, std::function<bool(Key<T>&, Key
 					pq.pop();
 				}
 				else {
-					if (pq.top().first.distanceFromEdge(fromPoint) < kNN.top().distanceFromEdge(fromPoint)) {
+					if (pq.top().first.minEdgeDistanceFromPoint(*fromPoint) < kNN.top().minEdgeDistanceFromPoint(*fromPoint)) {
 						kNN.pop();
 						kNN.emplace(std::move(pq.top().first));
-						pq.pop();
 					}
-					else {
-						pq.pop();
-					}
+					pq.pop();
 				}
 			}
 			else {
 				if (!kNN.empty()) {
-					if (pq.top().first.distanceFromEdge(fromPoint) < kNN.top().distanceFromEdge(fromPoint)) {
+					if (pq.top().first.minEdgeDistanceFromPoint(*fromPoint) < kNN.top().minEdgeDistanceFromPoint(*fromPoint)) {
 						loadedBlock = this->loadBlock(pq.top().first.blockPtr);
 						pq.pop();
 						break;

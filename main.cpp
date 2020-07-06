@@ -176,7 +176,7 @@ int main() {
 	float min[2] = { 59.0, 30 };
 	//float max[2] = { 60.0, 31 };
 	data.KNNSearch(min, 10, true);
-	//data.KNNSearch(min, 10, false);
+	data.KNNSearch(min, 10, false);
 
 
 

@@ -61,6 +61,8 @@ Data::Data() : data(L"data.bin"), index(2) {
 }
 
 void Data::PrintData(const char* block, int index) {
+
+	std::wcout << L"----------------------------------------------------------" << std::endl;
 	int position = index * rowSize;
 
 	for (auto& column : columns) {
@@ -179,7 +181,7 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (key.min[0] == x && key.min[1] == y) {
-					//PrintData(dataOut, i / rowSize);
+					PrintData(dataOut, i / rowSize);
 					break;
 				}
 			}
@@ -195,7 +197,7 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 
 		typedef std::pair<RStar::Key<float>, std::unique_ptr<char[]>> Pair;
 
-		std::priority_queue<Pair, std::vector<Pair>, std::function<bool(Pair&, Pair&)>> pq([&](Pair& a, Pair& b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
+		std::priority_queue<Pair, std::vector<Pair>, std::function<bool(Pair&, Pair&)>> pq([&](Pair& a, Pair& b) { return a.first.minEdgeDistanceFromPoint(fromPoint) < b.first.minEdgeDistanceFromPoint(fromPoint); });
 
 		auto start = std::chrono::high_resolution_clock::now();
 		for (int blockId = 1; blockId <= currentBlockId; blockId++) {
@@ -215,7 +217,7 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 				
 				if (pq.size() == k) {
 					auto& farKey = pq.top().first;
-					if (farKey.distanceFromEdge(fromPoint) > currentKey.distanceFromEdge(fromPoint)) {
+					if (farKey.minEdgeDistanceFromPoint(fromPoint) > currentKey.minEdgeDistanceFromPoint(fromPoint)) {
 						pq.pop();
 						std::unique_ptr<char[]> rowData(new char[rowSize]);
 						std::copy(dataOut + i, dataOut + i + rowSize, rowData.get());
@@ -231,7 +233,7 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 		}
 
 		while (!pq.empty()) {
-			//PrintData(pq.top().second.get(), 0);
+			PrintData(pq.top().second.get(), 0);
 			pq.pop();
 		}
 		auto stop = std::chrono::high_resolution_clock::now();
