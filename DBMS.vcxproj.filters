@@ -39,6 +39,9 @@
     <ClCompile Include="Data.cpp">
       <Filter>Source Files\Data</Filter>
     </ClCompile>
+    <ClCompile Include="MemoryBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BTree.h">
@@ -62,11 +65,11 @@
     <ClInclude Include="InsertionNodeContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="data.bin">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="data_metadata.bin">
       <Filter>Resource Files</Filter>
     </None>
@@ -77,6 +80,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="rtree.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

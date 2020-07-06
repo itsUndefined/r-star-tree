@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <chrono>
 
 Data::Data() : data(L"data.bin"), index(2) {
 	std::fstream metadataFile;
@@ -108,34 +109,51 @@ void Data::RangeSearch(float* min, float* max, bool withIndex) {
 	char* dataOut = new char[BLOCK_SIZE];
 
 	if (withIndex) {
+		auto start = std::chrono::high_resolution_clock::now();
 		auto keys = index.rangeSearch(min, max);
+		
 		for (auto& key : keys) {
 
 			data.ReadBlock(key.blockPtr, dataOut);
 
 			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				if (*(int*)(dataOut + i) == INT_MAX) {
+					break;
+				}
+
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (key.min[0] == x && key.min[1] == y) {
-					PrintData(dataOut, i / rowSize);
+					//PrintData(dataOut, i / rowSize);
 					break;
 				}
 			}
 
 		}
+
+		auto stop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+		std::wcout << duration.count() << L" milliseconds using R* index" << std::endl;
 	}
 
 	if (!withIndex) {
+		auto start = std::chrono::high_resolution_clock::now();
 		for (int blockId = 1; blockId <= currentBlockId; blockId++) {
 			data.ReadBlock(blockId, dataOut);
 			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				if (*(int*)(dataOut + i) == INT_MAX) {
+					break;
+				}
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (min[0] < x && x < max[0] && min[1] < y && y < max[1]) {
-					PrintData(dataOut, i / rowSize);
+					//PrintData(dataOut, i / rowSize);
 				}
 			}
 		}
+		auto stop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+		std::wcout << duration.count() << L" milliseconds using full table scan" << std::endl;
 	}
 
 	delete[] dataOut;
@@ -145,21 +163,30 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 	char* dataOut = new char[BLOCK_SIZE];
 
 	if (withIndex) {
+		auto start = std::chrono::high_resolution_clock::now();
 		auto keys = index.kNNSearch(point, k);
+
 		for (auto& key : keys) {
 
 			data.ReadBlock(key.blockPtr, dataOut);
 
 			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+				if (*(int*)(dataOut + i) == INT_MAX) {
+					break;
+				}
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (key.min[0] == x && key.min[1] == y) {
-					PrintData(dataOut, i / rowSize);
+					//PrintData(dataOut, i / rowSize);
 					break;
 				}
 			}
 
 		}
+
+		auto stop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+		std::wcout << duration.count() << L" milliseconds using R* tree" << std::endl;
 	}
 
 	if (!withIndex) {
@@ -169,9 +196,15 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 
 		std::priority_queue<Pair, std::vector<Pair>, std::function<bool(Pair&, Pair&)>> pq([&](Pair& a, Pair& b) { return a.first.distanceFromEdge(fromPoint) < b.first.distanceFromEdge(fromPoint); });
 
+		auto start = std::chrono::high_resolution_clock::now();
 		for (int blockId = 1; blockId <= currentBlockId; blockId++) {
 			data.ReadBlock(blockId, dataOut);
 			for (int i = 0; i < BLOCK_SIZE; i += rowSize) {
+
+				if (*(int*)(dataOut + i) == INT_MAX) {
+					break;
+				}
+
 				float dims[2];
 				dims[0] = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				dims[1] = *(float*)(dataOut + i + rowSize - sizeof(float));
@@ -197,9 +230,12 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 		}
 
 		while (!pq.empty()) {
-			PrintData(pq.top().second.get(), 0);
+			//PrintData(pq.top().second.get(), 0);
 			pq.pop();
 		}
+		auto stop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+		std::wcout << duration.count() << L" milliseconds using full table scan" << std::endl;
 	}
 
 	delete[] dataOut;

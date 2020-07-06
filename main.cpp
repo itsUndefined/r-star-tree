@@ -9,9 +9,9 @@
 #include <fcntl.h>
 #include <codecvt>
 
-//#include <mongocxx/instance.hpp>
-//#include <mongocxx/client.hpp>
-//#include <mongocxx/uri.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/uri.hpp>
 
 int main() {
 	_setmode(_fileno(stdout), _O_U16TEXT);
@@ -82,7 +82,6 @@ int main() {
 		*/
 
 
-	/*
 	mongocxx::instance instance{}; // This should be done only once.
 	mongocxx::client client{ mongocxx::uri{"mongodb://localhost:27017"} };
 
@@ -90,10 +89,9 @@ int main() {
 
 	mongocxx::options::find options;
 	options.no_cursor_timeout(true);
-	//options.max
 
 	mongocxx::cursor cursor = nodes.find({}, options);
-	*/
+	
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
 
 
@@ -101,11 +99,7 @@ int main() {
 
 	Data data;
 
-	/*
-	auto it = cursor.begin();
-	
-	while(it != cursor.end()) {
-		auto& record = *it;
+	for(auto& record : cursor) {
 		auto node = record.find("node")->get_document().view();
 		std::string id = node.find("@id")->get_utf8().value.to_string();
 		std::string lat = node.find("@lat")->get_utf8().value.to_string();
@@ -126,7 +120,6 @@ int main() {
 				auto tag = *node.find("tag");
 				if (tag.get_document().view().find("@k")->get_utf8().value.to_string() == "name") {
 					name = tag.get_document().view().find("@v")->get_utf8().value;
-					break;
 				}
 			}
 			
@@ -148,26 +141,21 @@ int main() {
 			.BuildAndSave();
 
 
-		if (i % 10000 == 0) {
-			std::wcout << (i / 1173000000.0) * 100 << L"% complete" << std::endl;
+		if (i % 200000 == 0) {
+			std::wcout << (i / 1173000000.0) * 100 << L"% complete with " << i << L"elements" << std::endl;
 		}
 
-		if (i == 3) {
+		if (i == 20000000) {
 			break;
 		}
 
 		i++;
 
-		it++;
-		if (it == cursor.end()) {
-			cursor.begin();
-		}
 	}
-
 
 	std::wcout << L"Cursor exited" << std::endl;
 
-	*/
+
 
 
 
@@ -184,11 +172,15 @@ int main() {
 	}
 	*/
 
+/*
 
-	
-	float min[2] = { 59.76, 30.32 };
-	//float max[2] = { 59.775, 30.33 };
-	data.KNNSearch(min, 4, true);
+	Data data;
+	float min[2] = { 59.0, 30 };
+	float max[2] = { 60.0, 31 };
+	data.KNNSearch(min, 10, true);
+	data.KNNSearch(min, 10, false);
+
+	*/
 
 
 

@@ -7,7 +7,7 @@
 using namespace RStar;
 
 template<class T>
-RStarTree<T>::RStarTree(int dimensions): data(L"rtree.bin") {
+RStarTree<T>::RStarTree(int dimensions): data(L"rtree.bin"), buffer(&data, 32, dimensions) {
 	auto blockCount = data.GetBlockCount();
 
 	if (blockCount == 1) {
@@ -17,7 +17,9 @@ RStarTree<T>::RStarTree(int dimensions): data(L"rtree.bin") {
 			*(int*)tempBuffer = 1;
 			data.SaveBlock(1, tempBuffer);
 		}
+		delete[] tempBuffer;
 	}
+	
 
 	this->nextBlockId = blockCount + 1;
 
@@ -80,7 +82,11 @@ std::vector<Key<T>> RStarTree<T>::kNNSearch(T* point, int k) {
 	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
 	Key<T> fromPoint(point, INT_MAX, dimensions);
 	std::vector<Key<T>> kNN;
-	std::priority_queue<Key<T>, std::vector<Key<T>>, std::function<bool(Key<T>&, Key<T>&)>> points([&](Key<T> &a, Key<T> &b) { return a.distanceFromEdge(fromPoint) > b.distanceFromEdge(fromPoint); });
+	std::priority_queue<
+		Key<T>,
+		std::vector<Key<T>>,
+		std::function<bool(Key<T>&, Key<T>&)>
+	> points([&](Key<T> &a, Key<T> &b) { return a.distanceFromEdge(fromPoint) > b.distanceFromEdge(fromPoint); });
 	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) > b.first.distanceFromEdge(fromPoint); });
 	while (true) {
 		for (auto& node : *loadedBlock) {
@@ -118,18 +124,20 @@ void RStarTree<T>::insert(Key<T>& val, std::unordered_set<int>& visitedLevels, i
 	auto result = chooseSubtree(val, level);
 
 	auto node = result.optimalNode;
-	//auto path = result.keyIndexPath;
+
+	static int count = 0;
+	count++;
 
 
-	for (int i = result.blockPath.size() - 1; i >= -1; i--) { // -1? What about split of root?
+	for (int i = result.blockPath.size() - 1; i >= -1; i--) {
 		if (!node->isFull()) {
 			node->insert(val);
-			data.SaveBlock(node->getBlockId(), node->getRawData().get());
+			buffer.WriteNode(node->getBlockId(), node);
 			for (int j = i; j >= 0; j--) {
 				auto& parentBlock = result.blockPath[j];
 				auto& parentKey = parentBlock->getKeys().at(result.keyIndexPath[j]);
 				parentKey.enlargeToFit(val);
-				data.SaveBlock(parentBlock->getBlockId(), parentBlock->getRawData().get());
+				buffer.WriteNode(parentBlock->getBlockId(), parentBlock);
 			}
 			break;
 		}
@@ -138,10 +146,12 @@ void RStarTree<T>::insert(Key<T>& val, std::unordered_set<int>& visitedLevels, i
 			auto parentForRightBlock = overflowTreatment(node, visitedLevels);
 			if (parentForRightBlock != nullptr) {
 				if (i == -1) {
-					std::shared_ptr<RStarTreeNode<T>> parentBlock = std::shared_ptr<RStarTreeNode<T>>(new RStarTreeNode<T>(dimensions, false, nextBlockId));
+					std::shared_ptr<RStarTreeNode<T>> parentBlock = std::shared_ptr<RStarTreeNode<T>>(
+						new RStarTreeNode<T>(dimensions, false, nextBlockId)
+					);
 					parentBlock->insert(*node->getBoundingBox());
 					parentBlock->insert(*parentForRightBlock);
-					data.SaveBlock(parentBlock->getBlockId(), parentBlock->getRawData().get());
+					buffer.WriteNode(parentBlock->getBlockId(), parentBlock);
 
 					this->root = parentBlock;
 					this->rootId = nextBlockId;
@@ -169,7 +179,6 @@ void RStarTree<T>::insert(Key<T>& val, std::unordered_set<int>& visitedLevels, i
 		}
 	}
 
-	
 
 }
 
@@ -180,9 +189,9 @@ std::unique_ptr<Key<T>> RStarTree<T>::overflowTreatment(std::shared_ptr<RStarTre
 		reInsert(node, visitedLevels);
 		return std::unique_ptr<Key<T>>();
 	} else {
-		auto rightBlock = node->split();
-		data.SaveBlock(node->getBlockId(), node->getRawData().get());
-		data.SaveBlock(nextBlockId, rightBlock->getRawData().get());
+		std::shared_ptr<RStarTreeNode<T>> rightBlock = node->split();
+		buffer.WriteNode(node->getBlockId(), node);
+		buffer.WriteNode(nextBlockId, rightBlock);
 		auto bb = rightBlock->getBoundingBox();
 		bb->blockPtr = nextBlockId++;
 		return bb;
@@ -194,7 +203,7 @@ void RStarTree<T>::reInsert(std::shared_ptr<RStarTreeNode<T>> node, std::unorder
 	auto bb = node->getBoundingBox();
 
 
-	std::sort(node->begin(), node->end(), [&](Key<T> a, Key<T> b) {
+	std::sort(node->begin(), node->end(), [&](Key<T>& a, Key<T>& b) {
 		return bb->distanceFromRectCenter(a) < bb->distanceFromRectCenter(b);
 	});
 
@@ -202,11 +211,11 @@ void RStarTree<T>::reInsert(std::shared_ptr<RStarTreeNode<T>> node, std::unorder
 	int p = 0.3 * M;
 
 	std::vector<Key<T>> deletedNodes;
-	deletedNodes.assign(node->end() - p, node->end());
+	deletedNodes.assign(std::make_move_iterator(node->end() - p), std::make_move_iterator(node->end()));
 	node->getKeys().erase(node->end() - p, node->end());
 
 
-	data.SaveBlock(node->getBlockId(), node->getRawData().get()); // Are we certain everything will work fine with reinsert? I don't like this
+	buffer.WriteNode(node->getBlockId(), node); // Are we certain everything will work fine with reinsert? I don't like this
 
 
 	for (auto& deletedNode : deletedNodes) {
@@ -216,15 +225,8 @@ void RStarTree<T>::reInsert(std::shared_ptr<RStarTreeNode<T>> node, std::unorder
 }
 
 template<class T>
-std::unique_ptr<RStarTreeNode<T>> RStarTree<T>::loadBlock(int blockId) {
-	char* loadedData = new char[BLOCK_SIZE];
-	data.ReadBlock(blockId, loadedData);
-
-	bool leaf = *(int*)loadedData == 1;
-	
-	auto ptr = std::unique_ptr<RStarTreeNode<T>>(new RStarTreeNode<T>(loadedData + 4, dimensions, leaf, blockId));
-	delete[] loadedData;
-	return ptr;
+std::shared_ptr<RStarTreeNode<T>> RStarTree<T>::loadBlock(int blockId) {
+	return buffer.ReadNode(blockId);
 }
 
 template<class T>
@@ -241,7 +243,7 @@ InsertionNodeContext<T> RStarTree<T>::chooseSubtree(Key<T>& val, int requiredLev
 
 		if (N->isLeaf()) {
 			N->level = level;
-			return InsertionNodeContext<T>(N, blockPath, keyIndexPath);
+			return InsertionNodeContext<T>(N, std::move(blockPath), keyIndexPath);
 		}
 
 		auto child = loadBlock(N->begin()->blockPtr);
@@ -252,7 +254,14 @@ InsertionNodeContext<T> RStarTree<T>::chooseSubtree(Key<T>& val, int requiredLev
 		Key<T>* chosenKey = nullptr;
 
 		if (child->isLeaf()) {
-			std::priority_queue<std::pair<T, Key<T>*>, std::vector<std::pair<T, Key<T>*>>, std::greater<std::pair<T, Key<T>*>>> pq; // TODO pointers? Safe?
+			typedef std::pair<T, Key<T>*> Pair;
+
+			std::priority_queue<
+				Pair,
+				std::vector<Pair>,
+				std::function<bool(Pair&, Pair&)>
+			> pq([&](Pair& a, Pair& b) { return a.first > b.first; });
+
 			for (auto& node : *N) {
 				pq.push(std::make_pair(node.areaEnlargementRequiredToFit(val), &node));
 			}
@@ -315,7 +324,7 @@ InsertionNodeContext<T> RStarTree<T>::chooseSubtree(Key<T>& val, int requiredLev
 		N = this->loadBlock(chosenKey->blockPtr);
 		level++;
 		if (requiredLevel == level) {
-			return InsertionNodeContext<T>(N, blockPath, keyIndexPath);;
+			return InsertionNodeContext<T>(N, std::move(blockPath), keyIndexPath);;
 		}
 		continue;
 	}

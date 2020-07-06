@@ -5,6 +5,7 @@
 #include <functional>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 // this class creates a data, that data can be a point or rectangle
 namespace RStar {
@@ -14,7 +15,6 @@ namespace RStar {
 		Key() {
 			min = nullptr;
 			max = nullptr;
-			blockPtr = 666;
 		}
 
 		// return the the sieze of the key
@@ -60,6 +60,12 @@ namespace RStar {
 		}
 
 		Key<T>& operator=(const Key<T>& source) {
+			if (this->min != nullptr) {
+				delete[] this->min;
+			}
+			if (this->max != nullptr) {
+				delete[] this->max;
+			}
 			this->min = new T[source.size];
 			std::copy(source.min, source.min + source.size, this->min);
 			this->max = new T[source.size];
@@ -229,8 +235,13 @@ namespace RStar {
 	{
 	public:
 		RStarTreeNode(int dimensions, int leaf, int blockId);
-		RStarTreeNode(typename std::vector<Key<T>>::iterator begin, typename std::vector<Key<T>>::iterator end, int dimensions, int leaf, int blockId);
+		RStarTreeNode(
+			std::move_iterator<typename std::vector<Key<T>>::iterator> begin,
+			std::move_iterator<typename std::vector<Key<T>>::iterator> end,
+			int dimensions, int leaf, int blockId
+		);
 		RStarTreeNode(char* diskData, int dimensions, int leaf, int blockId);
+
 		// insert a data or node thge the node
 		void insert(Key<T>& key);
 		// implements Split Algorithm
@@ -247,6 +258,7 @@ namespace RStar {
 		std::unique_ptr<Key<T>> getBoundingBox(int start, int end);
 		// returns the block id
 		int getBlockId() { return blockId; }
+		void setBlockId(int blockId) { this->blockId = blockId; }
 		
 
 		//Used for forEach functionality

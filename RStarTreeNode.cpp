@@ -13,7 +13,13 @@ RStarTreeNode<T>::RStarTreeNode(int dimensions, int leaf, int blockId) {
 }
 
 template<class T>
-RStarTreeNode<T>::RStarTreeNode(typename std::vector<Key<T>>::iterator begin, typename std::vector<Key<T>>::iterator end, int dimensions, int leaf, int blockId): RStarTreeNode(dimensions, leaf, blockId) {
+RStarTreeNode<T>::RStarTreeNode(
+	std::move_iterator<typename std::vector<Key<T>>::iterator> begin,
+	std::move_iterator<typename std::vector<Key<T>>::iterator> end,
+	int dimensions,
+	int leaf,
+	int blockId
+): RStarTreeNode(dimensions, leaf, blockId) {
 	this->data.assign(begin, end);
 }
 
@@ -94,7 +100,10 @@ std::unique_ptr<Key<T>> RStarTreeNode<T>::getBoundingBox() {
 		}
 	}
 
-	return std::unique_ptr<Key<T>>(new Key<T>(min, max, blockId, dimensions));
+	auto ptr = std::unique_ptr<Key<T>>(new Key<T>(min, max, blockId, dimensions));
+	delete[] min;
+	delete[] max;
+	return ptr;
 }
 
 template<class T>
@@ -119,7 +128,10 @@ std::unique_ptr<Key<T>> RStarTreeNode<T>::getBoundingBox(int start, int end) {
 		}
 	}
 
-	return std::unique_ptr<Key<T>>(new Key<T>(min, max, blockId, dimensions));
+	auto ptr = std::unique_ptr<Key<T>>(new Key<T>(min, max, blockId, dimensions));
+	delete[] min;
+	delete[] max;
+	return ptr;
 }
 
 template<class T>
@@ -151,13 +163,21 @@ std::unique_ptr<RStarTreeNode<T>> RStarTreeNode<T>::split() {
 	int axis = chooseSplitAxis();
 	int index = chooseSplitIndex(axis);
 	if (index < M - 2 * m + 2) {
-		std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.min[axis] < b.min[axis]; });
+		std::sort(this->data.begin(), this->data.end(), [&](Key<T>& a, Key<T>& b) { return a.min[axis] < b.min[axis]; });
 	} else {
-		std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.max[axis] < b.max[axis]; });
+		std::sort(this->data.begin(), this->data.end(), [&](Key<T>& a, Key<T>& b) { return a.max[axis] < b.max[axis]; });
 		index -= M - 2 * m + 2;
 	}
 
-	std::unique_ptr<RStarTreeNode<T>> rightBlock = std::unique_ptr<RStarTreeNode<T>>(new RStarTreeNode<T>(this->data.begin() + m + index, this->data.end(), dimensions, leaf, INT_MAX));
+	std::unique_ptr<RStarTreeNode<T>> rightBlock = std::unique_ptr<RStarTreeNode<T>>(
+		new RStarTreeNode<T>(
+			std::make_move_iterator(this->data.begin() + m + index),
+			std::make_move_iterator(this->data.end()),
+			dimensions,
+			leaf,
+			INT_MAX
+		)
+	);
 	this->data.erase(this->data.begin() + m + index, this->data.end());
 
 	return rightBlock;
@@ -216,7 +236,7 @@ int RStarTreeNode<T>::chooseSplitIndex(int axis) {
 	T minArea = std::numeric_limits<T>::max();
 	int index = 0;
 
-	std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.min[axis] < b.min[axis]; });
+	std::sort(this->data.begin(), this->data.end(), [&](Key<T>& a, Key<T>& b) { return a.min[axis] < b.min[axis]; });
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k, M + 1);
@@ -239,7 +259,7 @@ int RStarTreeNode<T>::chooseSplitIndex(int axis) {
 		}
 	}
 
-	std::sort(this->data.begin(), this->data.end(), [&](Key<T> a, Key<T> b) { return a.max[axis] < b.max[axis]; });
+	std::sort(this->data.begin(), this->data.end(), [&](Key<T>& a, Key<T>& b) { return a.max[axis] < b.max[axis]; });
 	for (int k = 0; k < M - 2 * m + 2; k++) {
 		auto bbFirstGroup = getBoundingBox(0, m + k);
 		auto bbSecondGroup = getBoundingBox(m + k, M + 1);
