@@ -7,6 +7,7 @@
 #include "MemoryBuffer.h"
 #include <unordered_set>
 #include <utility>
+#include <queue>
 
 // this class creates the R*Tree according to the original paper
 template<class T>
@@ -17,7 +18,7 @@ public:
 	// perform a range search query in the R*Tree
 	std::vector<RStar::Key<T>> rangeSearch(T* min, T* max);
 	// perform a k-NN query in the R*Tree
-	std::vector<RStar::Key<T>> kNNSearch(T* min, int k);
+	std::priority_queue<RStar::Key<T>, std::vector<RStar::Key<T>>, std::function<bool(RStar::Key<T>&, RStar::Key<T>&)>> kNNSearch(T* min, int k);
 	// inserts data into the R*Tree
 	void insertData(T* val, int blockId);
 

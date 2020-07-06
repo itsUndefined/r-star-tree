@@ -2,7 +2,6 @@
 
 #include <fstream>
 #include <iterator>
-#include <queue>
 
 using namespace RStar;
 
@@ -78,36 +77,57 @@ std::vector<Key<T>> RStarTree<T>::search(Key<T>& rangeSearch, std::shared_ptr<RS
 }
 
 template<class T>
-std::vector<Key<T>> RStarTree<T>::kNNSearch(T* point, int k) {
+std::priority_queue<Key<T>,	std::vector<Key<T>>, std::function<bool(Key<T>&, Key<T>&)>> RStarTree<T>::kNNSearch(T* point, int k) {
 	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
 	Key<T> fromPoint(point, INT_MAX, dimensions);
-	std::vector<Key<T>> kNN;
 	std::priority_queue<
 		Key<T>,
 		std::vector<Key<T>>,
 		std::function<bool(Key<T>&, Key<T>&)>
-	> points([&](Key<T> &a, Key<T> &b) { return a.distanceFromEdge(fromPoint) > b.distanceFromEdge(fromPoint); });
+	> kNN([&](Key<T> &a, Key<T> &b) { return a.distanceFromEdge(fromPoint) < b.distanceFromEdge(fromPoint); });
 	std::priority_queue<std::pair<Key<T>, bool>, std::vector<std::pair<Key<T>, bool>>, std::function<bool(std::pair<Key<T>, bool>&, std::pair<Key<T>, bool>&)>> pq([&](std::pair<Key<T>, bool> &a, std::pair<Key<T>, bool> &b) { return a.first.distanceFromEdge(fromPoint) > b.first.distanceFromEdge(fromPoint); });
 	while (true) {
 		for (auto& node : *loadedBlock) {
 			pq.emplace(node, loadedBlock->isLeaf());
 		}
-		while (!pq.empty() && pq.top().second) {
-			points.emplace(std::move(pq.top().first));
-			pq.pop();
-		}
-		if (pq.empty()) {
-			for (int i = 0; i < points.size(); i++) {
-				if (i == k) {
+		while (!pq.empty()) {
+			if (pq.top().second) {
+				if (kNN.size() < k) {
+					kNN.emplace(std::move(pq.top().first));
+					pq.pop();
+				}
+				else {
+					if (pq.top().first.distanceFromEdge(fromPoint) < kNN.top().distanceFromEdge(fromPoint)) {
+						kNN.pop();
+						kNN.emplace(std::move(pq.top().first));
+						pq.pop();
+					}
+					else {
+						pq.pop();
+					}
+				}
+			}
+			else {
+				if (!kNN.empty()) {
+					if (pq.top().first.distanceFromEdge(fromPoint) < kNN.top().distanceFromEdge(fromPoint)) {
+						loadedBlock = this->loadBlock(pq.top().first.blockPtr);
+						pq.pop();
+						break;
+					}
+					else {
+						pq.pop();
+					}
+				}
+				else {
+					loadedBlock = this->loadBlock(pq.top().first.blockPtr);
+					pq.pop();
 					break;
 				}
-				kNN.push_back(points.top());
-				points.pop();
 			}
+		}
+		if (pq.empty()) {
 			return kNN;
 		}
-		loadedBlock = this->loadBlock(pq.top().first.blockPtr);
-		pq.pop();
 	}
 }
 

@@ -166,7 +166,9 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 		auto start = std::chrono::high_resolution_clock::now();
 		auto keys = index.kNNSearch(point, k);
 
-		for (auto& key : keys) {
+		while (!keys.empty()) {
+			auto key = keys.top();
+			keys.pop();
 
 			data.ReadBlock(key.blockPtr, dataOut);
 
@@ -181,7 +183,6 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 					break;
 				}
 			}
-
 		}
 
 		auto stop = std::chrono::high_resolution_clock::now();

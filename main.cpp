@@ -9,9 +9,9 @@
 #include <fcntl.h>
 #include <codecvt>
 
-#include <mongocxx/instance.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/uri.hpp>
+//#include <mongocxx/instance.hpp>
+//#include <mongocxx/client.hpp>
+//#include <mongocxx/uri.hpp>
 
 int main() {
 	_setmode(_fileno(stdout), _O_U16TEXT);
@@ -81,7 +81,7 @@ int main() {
 		.BuildAndSave();
 		*/
 
-
+	/*
 	mongocxx::instance instance{}; // This should be done only once.
 	mongocxx::client client{ mongocxx::uri{"mongodb://localhost:27017"} };
 
@@ -98,7 +98,7 @@ int main() {
 	int i = 0;
 
 	Data data;
-
+	
 	for(auto& record : cursor) {
 		auto node = record.find("node")->get_document().view();
 		std::string id = node.find("@id")->get_utf8().value.to_string();
@@ -154,8 +154,7 @@ int main() {
 	}
 
 	std::wcout << L"Cursor exited" << std::endl;
-
-
+	*/
 
 
 
@@ -172,15 +171,13 @@ int main() {
 	}
 	*/
 
-/*
 
 	Data data;
 	float min[2] = { 59.0, 30 };
-	float max[2] = { 60.0, 31 };
+	//float max[2] = { 60.0, 31 };
 	data.KNNSearch(min, 10, true);
-	data.KNNSearch(min, 10, false);
+	//data.KNNSearch(min, 10, false);
 
-	*/
 
 
 
