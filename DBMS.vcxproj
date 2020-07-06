@@ -157,7 +157,6 @@
     <ClCompile Include="Data.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MemoryBuffer.cpp" />
     <ClCompile Include="RStarTree.cpp" />
     <ClCompile Include="RStarTreeNode.cpp" />
   </ItemGroup>

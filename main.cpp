@@ -17,63 +17,7 @@
 
 
 int main(int argc, char** argv) {
-	_setmode(_fileno(stdout), _O_U16TEXT);
-	/*BTree<int> tree;
-	
-	for (int i = 1; i < 100000; i++) {
-			tree.insert(i);
-	}
-
-	std::cout << tree.rootId << std::endl;*/
-
-	//Data data;
-
-	//data.InsertRow(std::unique_ptr<char>(new char[512]{ 'h', 'e', 'l', 'l', 'o', '\0', 'p', 10, 0, 0, 0 }));
-	//data.PrintData();
-
-	//RStarTree tree(1);
-
-	//tree.search(new int[1]{ 0 }, new int[1]{ 20 });
-
-	//int min[2] = { 0, 0 };
-	//int max[2] = { 2, 2 };
-
-	//RStar::Key<int> a(min, max, 1, 2);
-
-	//int point[2] = { 5, 1 };
-
-	//auto result = a.areaEnlargementRequiredToFit(point);
-
-	//auto result1 = *a.getEnlargedToFit(point);
-
-
-	/*
-	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_file("map.osm");
-	if (!result) {
-		return -1;
-	}
-
-	auto nodes = doc.child(L"osm").children(L"node");
-
-	for (auto& node : nodes) {
-		for (auto& tag : node.children(L"tag")) {
-			std::wstring key(tag.attribute(L"k").as_string());
-			if (key == L"name") {
-				std::wcout << tag.attribute(L"v").as_string() << std::endl;
-			}
-		}
-		//std::cout << node.attribute("id").as_int() << std::endl;
-		//std::cout << node.attribute("lat").as_double() << std::endl;
-		//std::cout << node.attribute("lon").as_double() << std::endl;
-		//return 0;
-	}
-
-	
-	return 0;
-	*/
-
-
+	_setmode(_fileno(stdout), _O_U16TEXT); // Support UTF16 in windows
 
 	/*
 	data.GetRecordBuilder()
@@ -82,7 +26,7 @@ int main(int argc, char** argv) {
 		.InsertFloat(0.4f)
 		.InsertCharN(L"dddd")
 		.BuildAndSave();
-		*/
+	*/
 
 
 
@@ -99,12 +43,9 @@ int main(int argc, char** argv) {
 	
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
 
-
-	int i = 0;
-
 	*/
 
-	Data data;
+	//Data data;
 	/*
 	for(auto& record : cursor) {
 		auto node = record.find("node")->get_document().view();
@@ -163,24 +104,7 @@ int main(int argc, char** argv) {
 	std::wcout << L"Cursor exited" << std::endl;
 	*/
 
-
-
-	//RStarTree<int> magicBoy(2);
-	//int input[2] = { 3, 3 };
-	//magicBoy.insertData(input);
-	
-	
-	
-	/*
-	for (int i = 1; i < 6; i++) {
-		int input[2] = { i, i };
-		magicBoy.insertData(input);
-	}
-	*/
-
-
-
-
+	Data data;
 	if (argc > 1) {
 		int queryType = std::stoi(argv[1]); // 0 for range. 1 for knn
 		if (queryType == 0) { // If range search
@@ -231,17 +155,17 @@ int main(int argc, char** argv) {
 	}
 
 
-	//Data data;
-	//float min[2] = { -90, -180 };
-	//float max[2] = { 90, 180 };
-	//data.RangeSearch(min, max, true, false);
-	//data.RangeSearch(min, max, false, false);
+	
 
-	//data.KNNSearch(min, 2, false, false);
-
-
-
-
+	/* Code snippet 3
+	Data data;
+	data.GetRecordBuilder()
+		.InsertInteger(1)
+		.InsertCharN(L"Αυτό είναι ένα σχετικά μεγάλο δοκιμαστικό string με ελληνικούς χαρακτήρες")
+		.InsertFloat(0.f)
+		.InsertFloat(FLT_MAX)
+		.BuildAndSave();
+	*/
 
 	return 0;
 }

@@ -114,7 +114,7 @@ void Data::RangeSearch(float* min, float* max, bool withIndex, bool printResults
 	if (withIndex) {
 		auto start = std::chrono::high_resolution_clock::now();
 		auto keys = index.rangeSearch(min, max);
-		std::wcout << keys.size() << std::endl;
+
 		for (auto& key : keys) {
 
 			data.ReadBlock(key.blockPtr, dataOut);

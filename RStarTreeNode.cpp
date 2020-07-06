@@ -272,7 +272,7 @@ int RStarTreeNode<T>::chooseSplitIndex(int axis) {
 		if (overlap == minOverlap && area < minArea) {
 			minArea = area;
 			minOverlap = overlap;
-			index = k + (M - 2 * m + 2); // TODO check
+			index = k + (M - 2 * m + 2);
 		}
 
 		if (overlap < minOverlap) {
