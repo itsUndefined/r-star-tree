@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <queue>
+#include <string>
 
 #include "Data.h"
 #include "BTree.h"
@@ -9,11 +10,13 @@
 #include <fcntl.h>
 #include <codecvt>
 
+
 //#include <mongocxx/instance.hpp>
 //#include <mongocxx/client.hpp>
 //#include <mongocxx/uri.hpp>
 
-int main() {
+
+int main(int argc, char** argv) {
 	_setmode(_fileno(stdout), _O_U16TEXT);
 	/*BTree<int> tree;
 	
@@ -81,6 +84,8 @@ int main() {
 		.BuildAndSave();
 		*/
 
+
+
 	/*
 	mongocxx::instance instance{}; // This should be done only once.
 	mongocxx::client client{ mongocxx::uri{"mongodb://localhost:27017"} };
@@ -97,8 +102,10 @@ int main() {
 
 	int i = 0;
 
+	*/
+
 	Data data;
-	
+	/*
 	for(auto& record : cursor) {
 		auto node = record.find("node")->get_document().view();
 		std::string id = node.find("@id")->get_utf8().value.to_string();
@@ -145,7 +152,7 @@ int main() {
 			std::wcout << (i / 1173000000.0) * 100 << L"% complete with " << i << L"elements" << std::endl;
 		}
 
-		if (i == 20000000) {
+		if (i == 100000) {
 			break;
 		}
 
@@ -172,11 +179,65 @@ int main() {
 	*/
 
 
-	Data data;
-	float min[2] = { 59.0, 30 };
-	//float max[2] = { 60.0, 31 };
-	data.KNNSearch(min, 10, true);
-	data.KNNSearch(min, 10, false);
+
+
+	if (argc > 1) {
+		int queryType = std::stoi(argv[1]); // 0 for range. 1 for knn
+		if (queryType == 0) { // If range search
+			float min[2] = { std::stof(argv[2]), std::stof(argv[3]) };
+			float max[2] = { std::stof(argv[4]), std::stof(argv[5]) };
+			bool useIndex;
+			if (std::string(argv[6]) == "with_index") {
+				useIndex = true;
+			} else if(std::string(argv[6]) == "without_index") {
+				useIndex = false;
+			} else {
+				std::wcout << "Unknown parameter: " << argv[6] << std::endl;
+				exit(1);
+			}
+			bool printResults;
+			if (std::string(argv[7]) == "print_results") {
+				printResults = true;
+			}
+			else if (std::string(argv[7]) == "print_count") {
+				printResults = false;
+			}
+			else {
+				std::wcout << "Unknown parameter: " << argv[7] << std::endl;
+				exit(1);
+			}
+			data.RangeSearch(min, max, useIndex, printResults);
+		}
+
+		if (queryType == 1) {
+			float point[2] = { std::stof(argv[2]), std::stof(argv[3]) };
+			int k = std::stoi(argv[4]);
+			bool useIndex;
+			if (std::string(argv[5]) == "with_index") {
+				useIndex = true;
+			}
+			else if (std::string(argv[5]) == "without_index") {
+				useIndex = false;
+			}
+			bool printResults;
+			if (std::string(argv[6]) == "print_results") {
+				printResults = true;
+			}
+			else if (std::string(argv[6]) == "print_count") {
+				printResults = false;
+			}
+			data.KNNSearch(point, k, useIndex, printResults);
+		}
+	}
+
+
+	//Data data;
+	//float min[2] = { -90, -180 };
+	//float max[2] = { 90, 180 };
+	//data.RangeSearch(min, max, true, false);
+	//data.RangeSearch(min, max, false, false);
+
+	//data.KNNSearch(min, 2, false, false);
 
 
 

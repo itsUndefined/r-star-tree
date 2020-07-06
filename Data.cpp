@@ -106,14 +106,15 @@ void Data::InsertRow(std::unique_ptr<char[]> insertingData) {
 	}
 }
 
-void Data::RangeSearch(float* min, float* max, bool withIndex) {
-	
+void Data::RangeSearch(float* min, float* max, bool withIndex, bool printResults) {
 	char* dataOut = new char[BLOCK_SIZE];
+
+	int resultCount = 0;
 
 	if (withIndex) {
 		auto start = std::chrono::high_resolution_clock::now();
 		auto keys = index.rangeSearch(min, max);
-		
+		std::wcout << keys.size() << std::endl;
 		for (auto& key : keys) {
 
 			data.ReadBlock(key.blockPtr, dataOut);
@@ -126,11 +127,18 @@ void Data::RangeSearch(float* min, float* max, bool withIndex) {
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (key.min[0] == x && key.min[1] == y) {
-					//PrintData(dataOut, i / rowSize);
+					resultCount++;
+					if (printResults) {
+						PrintData(dataOut, i / rowSize);
+					}
 					break;
 				}
 			}
 
+		}
+
+		if (!printResults) {
+			std::wcout << L"Range search returned " << resultCount << L" results" << std::endl;
 		}
 
 		auto stop = std::chrono::high_resolution_clock::now();
@@ -149,10 +157,19 @@ void Data::RangeSearch(float* min, float* max, bool withIndex) {
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (min[0] < x && x < max[0] && min[1] < y && y < max[1]) {
-					//PrintData(dataOut, i / rowSize);
+					resultCount++;
+					if (printResults) {
+						PrintData(dataOut, i / rowSize);
+					}
+					
 				}
 			}
 		}
+
+		if (!printResults) {
+			std::wcout << L"Range search returned " << resultCount << L" results" << std::endl;
+		}
+
 		auto stop = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 		std::wcout << duration.count() << L" milliseconds using full table scan" << std::endl;
@@ -161,8 +178,10 @@ void Data::RangeSearch(float* min, float* max, bool withIndex) {
 	delete[] dataOut;
 }
 
-void Data::KNNSearch(float* point, int k, bool withIndex) {
+void Data::KNNSearch(float* point, int k, bool withIndex, bool printResults) {
 	char* dataOut = new char[BLOCK_SIZE];
+
+	int resultCount = 0;
 
 	if (withIndex) {
 		auto start = std::chrono::high_resolution_clock::now();
@@ -181,10 +200,17 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 				float x = *(float*)(dataOut + i + rowSize - 2 * sizeof(float));
 				float y = *(float*)(dataOut + i + rowSize - sizeof(float));
 				if (key.min[0] == x && key.min[1] == y) {
-					PrintData(dataOut, i / rowSize);
+					resultCount++;
+					if (printResults) {
+						PrintData(dataOut, i / rowSize);
+					}
 					break;
 				}
 			}
+		}
+
+		if (!printResults) {
+			std::wcout << L"Knn returned " << resultCount << L" results" << std::endl;
 		}
 
 		auto stop = std::chrono::high_resolution_clock::now();
@@ -233,9 +259,16 @@ void Data::KNNSearch(float* point, int k, bool withIndex) {
 		}
 
 		while (!pq.empty()) {
-			PrintData(pq.top().second.get(), 0);
+			if (printResults) {
+				PrintData(pq.top().second.get(), 0);
+			}
+			resultCount++;
 			pq.pop();
 		}
+		if (!printResults) {
+			std::wcout << L"Knn returned " << resultCount << L" results" << std::endl;
+		}
+
 		auto stop = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 		std::wcout << duration.count() << L" milliseconds using full table scan" << std::endl;

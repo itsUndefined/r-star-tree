@@ -98,12 +98,7 @@ namespace RStar {
 		// checks if a rectangle overlaps with another rectangle
 		bool overlaps(Key<T>& key) {
 			for (int i = 0; i < size; i++) {
-				if (
-					this->min[i] < key.min[i] && this->max[i] > key.min[i] ||
-					this->min[i] < key.max[i] && this->max[i] > key.max[i]
-				) {
-					continue;
-				} else {
+				if (std::min(this->max[i], key.max[i]) <= std::max(this->min[i], key.min[i])) {
 					return false;
 				}
 			}

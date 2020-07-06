@@ -45,9 +45,8 @@ RStarTree<T>::RStarTree(int dimensions): data(L"rtree.bin"), buffer(&data, 32, d
 
 template<class T>
 std::vector<Key<T>> RStarTree<T>::rangeSearch(T* min, T* max) {
-	std::shared_ptr<RStarTreeNode<T>> loadedBlock = this->root;
 	Key<T> rangeSearch(min, max, INT_MAX, dimensions);
-	return this->search(rangeSearch, loadedBlock);
+	return this->search(rangeSearch, this->root);
 }
 
 template<class T>
@@ -65,15 +64,17 @@ std::vector<Key<T>> RStarTree<T>::search(Key<T>& rangeSearch, std::shared_ptr<RS
 				list.push_back(point);
 			}
 		}
-
+		//std::wcout << L"Partial result count: " << list.size() << L" on block ID: " << block->getBlockId() << std::endl;
 		return list;
 	}
 
 	for (auto& key : *block) {
 		if (key.overlaps(rangeSearch)) {
-			this->search(rangeSearch, this->loadBlock(key.blockPtr));
+			std::vector<Key<T>> partialResult = this->search(rangeSearch, this->loadBlock(key.blockPtr));
+			list.insert(list.end(), std::make_move_iterator(partialResult.begin()), std::make_move_iterator(partialResult.end()));
 		}
 	}
+	return list;
 }
 
 template<class T>

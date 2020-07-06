@@ -43,8 +43,8 @@ public:
 	Data();
 	void PrintData(const char* block, int index);
 	void InsertRow(std::unique_ptr<char[]> data);
-	void RangeSearch(float* min, float* max, bool withIndex);
-	void KNNSearch(float* point, int k, bool withIndex);
+	void RangeSearch(float* min, float* max, bool withIndex, bool printResults);
+	void KNNSearch(float* point, int k, bool withIndex, bool printResults);
 	RecordBuilder GetRecordBuilder();
 
 
