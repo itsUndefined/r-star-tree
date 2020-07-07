@@ -19,18 +19,8 @@
 int main(int argc, char** argv) {
 	_setmode(_fileno(stdout), _O_U16TEXT); // Support UTF16 in windows
 
-	/*
-	data.GetRecordBuilder()
-		.InsertInteger(16)
-		.InsertFloat(0.3f)
-		.InsertFloat(0.4f)
-		.InsertCharN(L"dddd")
-		.BuildAndSave();
-	*/
 
-
-
-	/*
+	/* Code snippet 1 ( Inserting data from mongodb )
 	mongocxx::instance instance{}; // This should be done only once.
 	mongocxx::client client{ mongocxx::uri{"mongodb://localhost:27017"} };
 
@@ -43,10 +33,8 @@ int main(int argc, char** argv) {
 	
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
 
-	*/
+	Data data;
 
-	//Data data;
-	/*
 	for(auto& record : cursor) {
 		auto node = record.find("node")->get_document().view();
 		std::string id = node.find("@id")->get_utf8().value.to_string();
@@ -154,10 +142,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-
-	
-
-	/* Code snippet 3
+	/* Code snippet 2 ( Inserting data )
 	Data data;
 	data.GetRecordBuilder()
 		.InsertInteger(1)
